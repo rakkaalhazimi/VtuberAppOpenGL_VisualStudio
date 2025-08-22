@@ -23,6 +23,7 @@
 #include<opencv2/opencv.hpp>
 
 #include "Camera.h"
+#include "CameraDevice.h"
 #include "commands/CommandManager.h"
 #include "commands/RotateBoneCommand.h"
 #include "gui/PMXEditorGUI.h"
@@ -130,6 +131,7 @@ int main(int argc, char * argv[]) {
   Shader textShader("assets/shaders/text.vert", "assets/shaders/text.frag");
   Shader rayShader("assets/shaders/default.vert", "assets/shaders/ray.frag");
   Shader pmxShader("assets/shaders/pmx.vert", "assets/shaders/default.frag");
+  Shader camDeviceShader("assets/shaders/camera-device.vert", "assets/shaders/camera-device.frag");
   
   
   // Texture
@@ -273,6 +275,9 @@ int main(int argc, char * argv[]) {
   
   // GUI test
   PMXEditorGUI pmxEditorGUI(feixiaoModel, commandManager);
+
+  // Camera Device
+  CameraDevice cameraDevice;
   
   
   // Main while loop
@@ -337,6 +342,9 @@ int main(int argc, char * argv[]) {
     const bool hit = rayCaster.Intersect(shader, mesh);
     const bool pressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     const bool unlocked = glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS;
+
+    // Device Camera
+    cameraDevice.start(camDeviceShader, width, height, 0.0f, 0.0f);
     
     // Get mouse coordinate
 	  double xpos, ypos;
