@@ -1221,6 +1221,9 @@
     <ClInclude Include="src\UsedBones.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\CameraDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1632,6 +1635,8 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="assets\shaders\camera-device.vert" />
+    <None Include="assets\shaders\camera-device.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1704,6 +1709,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CameraDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
