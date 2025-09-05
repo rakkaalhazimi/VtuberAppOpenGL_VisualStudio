@@ -20,6 +20,7 @@
 #include<imgui/imgui_impl_glfw.h>
 #include<imgui/imgui_impl_opengl3.h>
 
+#include "onnxruntime_cxx_api.h"
 #include<opencv2/opencv.hpp>
 
 #include "Camera.h"
@@ -28,6 +29,9 @@
 #include "commands/RotateBoneCommand.h"
 #include "gui/PMXEditorGUI.h"
 #include "Mesh.h"
+#include "PoseEstimation.h"
+#include "pose/BlazePose.h"
+#include "pose/PoseDrawer.h"
 #include "PMXFile.h"
 #include "PMXModel.h"
 #include "RayCaster.h"
@@ -61,7 +65,7 @@ GLuint indices[] = {
 
 
 
-int main(int argc, char * argv[]) {
+int main(int argc, char* argv[]) {
 
 
   std::cout << "Current working dir: " << std::filesystem::current_path() << std::endl;
@@ -92,7 +96,7 @@ int main(int argc, char * argv[]) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   
   // Create a GLFWwindow object of 800 by 800 pixels, naming it YoutubeOpenGL
-  GLFWwindow *window = glfwCreateWindow(width, height, "Vtuber Application", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(width, height, "Vtuber Application", NULL, NULL);
   if (window == NULL)
   {
     std::cout << "Failed to create GLFW window" << std::endl;
@@ -132,6 +136,7 @@ int main(int argc, char * argv[]) {
   Shader rayShader("assets/shaders/default.vert", "assets/shaders/ray.frag");
   Shader pmxShader("assets/shaders/pmx.vert", "assets/shaders/default.frag");
   Shader camDeviceShader("assets/shaders/camera-device.vert", "assets/shaders/camera-device.frag");
+	Shader poseDrawerShader("assets/shaders/pose-drawer.vert", "assets/shaders/pose-drawer.frag");
   
   
   // Texture
@@ -141,12 +146,12 @@ int main(int argc, char * argv[]) {
   // Mesh
   std::vector<Vertex> vert(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
   std::vector<GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
-  std::vector<Texture> tex = {myTexture};
+	std::vector<Texture> tex = { myTexture };
   
   Mesh mesh(vert, ind, tex);
   Mesh mesh2(vert, ind, tex);
   mesh2.translation.x = 1.5f;
-  std::vector<Mesh*> meshes = {&mesh, &mesh2};
+	std::vector<Mesh*> meshes = { &mesh, &mesh2 };
   
   
   // Raycaster
@@ -166,6 +171,7 @@ int main(int argc, char * argv[]) {
   Camera camera(width, height, glm::vec3(0.0f, 20.0f, -15.0f));
   
   glEnable(GL_DEPTH_TEST);
+	glEnable(GL_PROGRAM_POINT_SIZE);
   // Specify the color of the background
   glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
   // Clean the back buffer and assign the new color to it
@@ -192,12 +198,12 @@ int main(int argc, char * argv[]) {
   for (int i = 0; i < pmxFile.textures.size(); i++)
   {
     pmxTextures.push_back(
-      Texture{pmxFile.textures[i].c_str(), "myTexture", (GLuint)i}
+			Texture{ pmxFile.textures[i].c_str(), "myTexture", (GLuint)i }
     );
   }
   
   std::vector<Vertex> pmxVertices;
-  for (PMXVertex item: pmxFile.vertices)
+	for (PMXVertex item : pmxFile.vertices)
   {
     pmxVertices.push_back(
       Vertex 
@@ -211,14 +217,14 @@ int main(int argc, char * argv[]) {
   }
   
   std::vector<GLuint> pmxIndices;
-  for (uint16_t item: pmxFile.indices)
+	for (uint16_t item : pmxFile.indices)
   {
     pmxIndices.push_back(item);
   }
   Mesh feixiaoMesh(pmxVertices, pmxIndices, pmxTextures);
   
   int faceAllCount = 0;
-  for (PMXMaterial item: pmxFile.materials)
+	for (PMXMaterial item : pmxFile.materials)
   {
     faceAllCount += item.faceCount;
   }
@@ -279,7 +285,27 @@ int main(int argc, char * argv[]) {
   // Camera Device
   CameraDevice cameraDevice;
   
+	// Pose Estimation
+	//Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "PoseEstimation");
+	//Ort::SessionOptions sessionOptions;
+	//sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+	//OrtCUDAProviderOptions cuda_options;
+	//cuda_options.device_id = 0;               // GPU ID
+	//cuda_options.arena_extend_strategy = 0;
+	//cuda_options.gpu_mem_limit = SIZE_MAX;    // no limit
+	//cuda_options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchExhaustive;
+	//cuda_options.do_copy_in_default_stream = 1;
+	//sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
+	//Ort::Session session(env, L"assets/dnn/pose_detection.onnx", sessionOptions);
+
+	BlazePose pose(L"assets/dnn/pose_landmarks_detector_lite.onnx");
+	cv::Mat frame = cv::imread("assets/images/brs.png");
+	std::vector<Landmark> landmarks = pose.predict(frame);
   
+	// Pose Draw
+	PoseDrawer poseDrawer;
+	poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
+
   // Main while loop
   while (!glfwWindowShouldClose(window))
   {
@@ -317,6 +343,14 @@ int main(int argc, char * argv[]) {
       glUniform1f(uOffsetLoc, uOffset);
       
       elapsedTime = 0.0f;
+
+			// Predict Frame
+			cv::Mat frame = cameraDevice.getFrame();
+			if (!frame.empty())
+			{
+				std::vector<Landmark> innerLandmarks = pose.predict(frame);
+				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::Nose], width, height);
+			}
     }
     
     // Camera
@@ -342,6 +376,9 @@ int main(int argc, char * argv[]) {
     const bool hit = rayCaster.Intersect(shader, mesh);
     const bool pressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     const bool unlocked = glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS;
+
+		// Pose Drawer
+		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
 
     // Device Camera
     cameraDevice.start(camDeviceShader, width, height, 0.0f, 0.0f);

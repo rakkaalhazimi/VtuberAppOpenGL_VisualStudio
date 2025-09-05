@@ -84,7 +84,7 @@ void CameraDevice::start(Shader& shader, int windowWidth, int windowHeight, floa
 	}
 
 
-	int width = 300, height = 300;
+	int width = 256, height = 256;
 
 	// Update vertices (v2 vertex, v2 texCoord)
 	float vertices[6][4] = 
