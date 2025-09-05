@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.props" Condition="Exists('..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -102,7 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include/imgui;$(ProjectDir)src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include/imgui;$(ProjectDir)include/onnxruntime;$(ProjectDir)src</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -118,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include/imgui;$(ProjectDir)src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include/imgui;$(ProjectDir)include/onnxruntime;$(ProjectDir)src</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -514,6 +515,18 @@
     <ClInclude Include="include\imgui\imstb_textedit.h" />
     <ClInclude Include="include\imgui\imstb_truetype.h" />
     <ClInclude Include="include\KHR\khrplatform.h" />
+    <ClInclude Include="include\onnxruntime\cpu_provider_factory.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_cxx_api.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_cxx_inline.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_c_api.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_float16.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_lite_custom_op.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_run_options_config_keys.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_session_options_config_keys.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_training_cxx_api.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_training_cxx_inline.h" />
+    <ClInclude Include="include\onnxruntime\onnxruntime_training_c_api.h" />
+    <ClInclude Include="include\onnxruntime\provider_options.h" />
     <ClInclude Include="include\stb\stb_image.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\CameraDevice.h" />
@@ -524,6 +537,9 @@
     <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\PMXFile.h" />
     <ClInclude Include="src\PMXModel.h" />
+    <ClInclude Include="src\PoseEstimation.h" />
+    <ClInclude Include="src\pose\BlazePose.h" />
+    <ClInclude Include="src\pose\PoseDrawer.h" />
     <ClInclude Include="src\RayCaster.h" />
     <ClInclude Include="src\Selector.h" />
     <ClInclude Include="src\shader.h" />
@@ -534,6 +550,8 @@
   <ItemGroup>
     <None Include="assets\shaders\camera-device.frag" />
     <None Include="assets\shaders\camera-device.vert" />
+    <None Include="assets\shaders\pose-drawer.frag" />
+    <None Include="assets\shaders\pose-drawer.vert" />
     <None Include="include\glm\detail\func_common.inl" />
     <None Include="include\glm\detail\func_common_simd.inl" />
     <None Include="include\glm\detail\func_exponential.inl" />
@@ -692,6 +710,9 @@
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\PMXFile.cpp" />
     <ClCompile Include="src\PMXModel.cpp" />
+    <ClCompile Include="src\PoseEstimation.cpp" />
+    <ClCompile Include="src\pose\BlazePose.cpp" />
+    <ClCompile Include="src\pose\PoseDrawer.cpp" />
     <ClCompile Include="src\RayCaster.cpp" />
     <ClCompile Include="src\Selector.cpp" />
     <ClCompile Include="src\shader.cpp" />
@@ -704,6 +725,7 @@
     <Import Project="..\packages\glfw.3.4.0\build\native\glfw.targets" Condition="Exists('..\packages\glfw.3.4.0\build\native\glfw.targets')" />
     <Import Project="..\packages\freetype2.2.6.0.1\build\native\freetype2.targets" Condition="Exists('..\packages\freetype2.2.6.0.1\build\native\freetype2.targets')" />
     <Import Project="..\packages\opencv-3.4-v143.3.4.16.2\build\native\opencv-3.4-v143.targets" Condition="Exists('..\packages\opencv-3.4-v143.3.4.16.2\build\native\opencv-3.4-v143.targets')" />
+    <Import Project="..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.targets" Condition="Exists('..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -712,5 +734,7 @@
     <Error Condition="!Exists('..\packages\glfw.3.4.0\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glfw.3.4.0\build\native\glfw.targets'))" />
     <Error Condition="!Exists('..\packages\freetype2.2.6.0.1\build\native\freetype2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\freetype2.2.6.0.1\build\native\freetype2.targets'))" />
     <Error Condition="!Exists('..\packages\opencv-3.4-v143.3.4.16.2\build\native\opencv-3.4-v143.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\opencv-3.4-v143.3.4.16.2\build\native\opencv-3.4-v143.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.ML.OnnxRuntime.1.22.1\build\native\Microsoft.ML.OnnxRuntime.targets'))" />
   </Target>
 </Project>
