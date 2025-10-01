@@ -135,11 +135,11 @@ std::vector<Landmark> BlazePose::predict(cv::Mat frame)
   {
     landmarks.push_back(
       {
-        floatArray[0],
-        floatArray[1],
-        floatArray[2],
-        floatArray[3],
-        floatArray[4],
+        floatArray[i + 0],
+        floatArray[i + 1],
+        floatArray[i + 2],
+        floatArray[i + 3],
+        floatArray[i + 4],
       }
      );
   }
