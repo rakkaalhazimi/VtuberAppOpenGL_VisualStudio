@@ -2,6 +2,7 @@
 Reference:
 https://huggingface.co/unity/inference-engine-blaze-pose/tree/main/models
 https://github.com/Unity-Technologies/inference-engine-samples/tree/main/BlazeDetectionSample/Pose
+https://medium.com/axinc-ai/blazepose-a-3d-pose-estimation-model-d8689d06b7c4
 */
 #pragma once
 
