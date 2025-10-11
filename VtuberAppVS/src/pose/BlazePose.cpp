@@ -261,6 +261,11 @@ Region BlazePose::detectionToRect(Region &region)
   float rotation = targetAngle - std::atan2(-(yScale - yCenter), xScale - xCenter);
   region.rotation = rotation;
 
+  /*std::cout << "Box Size: " << boxSize << std::endl;
+  std::cout << "Rect X Center: " << xCenter << std::endl;
+  std::cout << "Rect Y Center: " << yCenter << std::endl;
+  std::cout << "Rotation: " << rotation << std::endl;*/
+
   return region;
 }
 
@@ -281,6 +286,11 @@ std::vector<cv::Point2f> BlazePose::rotatedRectToPoints(
   float p3x = (int)(2 * cx - p1x);
   float p3y = (int)(2 * cy - p1y);
   p0x, p0y, p1x, p1y = (int)p0x, (int)p0y, (int)p1x, (int)p1y;
+  
+  p0x = (int)p0x;
+  p0y = (int)p0y;
+  p1x = (int)p1x;
+  p1y = (int)p1y;
   
   return { {p0x, p0y}, {p1x, p1y}, {p2x, p2y}, {p3x, p3y} };
 }
@@ -313,6 +323,12 @@ void BlazePose::rectTransformation(Region& region, float w, float h)
   float longSide = std::max(width * w, height * h);
   region.rectWA = longSide * scaleX;
   region.rectHA = longSide * scaleY;
+
+  /*std::cout << "rectXCenterA: " << region.rectXCenterA << std::endl;
+  std::cout << "rectYCenterA: " << region.rectYCenterA << std::endl;
+  std::cout << "rectWA: " << region.rectWA << std::endl;
+  std::cout << "rectHA: " << region.rectHA << std::endl;*/
+
   region.rectPoints = rotatedRectToPoints(
     region.rectXCenterA,
     region.rectYCenterA,
