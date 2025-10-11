@@ -285,7 +285,6 @@ std::vector<cv::Point2f> BlazePose::rotatedRectToPoints(
   float p2y = (int)(2 * cy - p0y);
   float p3x = (int)(2 * cx - p1x);
   float p3y = (int)(2 * cy - p1y);
-  p0x, p0y, p1x, p1y = (int)p0x, (int)p0y, (int)p1x, (int)p1y;
   
   p0x = (int)p0x;
   p0y = (int)p0y;
