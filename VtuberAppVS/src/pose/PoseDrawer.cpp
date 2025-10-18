@@ -26,14 +26,15 @@ void PoseDrawer::Draw(Shader &shader, Landmark &landmark, int windowWidth, int w
 	
 	int width = 256, height = 256;
 
-	//std::cout << "Width: " << landmark.x << std::endl;
-	//std::cout << "Height: " << landmark.y << std::endl;
-	std::cout << "Confidence: " << landmark.presence << std::endl;
-	std::cout << "Visibility: " << landmark.visibility << std::endl;
+	/*std::cout << "X: " << landmark.x * width;
+	std::cout << "  Y: " << landmark.y * height;
+	std::cout << "  Confidence: " << landmark.presence;
+	std::cout << "  Visibility: " << landmark.visibility;
+	std::cout << std::endl;*/
 
 
 	float vertices[4] = {landmark.x, landmark.y, 0.0f, 0.0f};
-	//float vertices[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+	//float vertices[4] = {256.0f, 256.0f, 0.0f, 0.0f};
 
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);

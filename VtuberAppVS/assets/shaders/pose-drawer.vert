@@ -6,5 +6,5 @@ uniform mat4 projection;
 void main()
 {
     gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);
-    gl_PointSize = 16.0;
+    gl_PointSize = 8.0;
 }  

@@ -31,6 +31,12 @@ CameraDevice::CameraDevice()
 	// Thread for camera capture
 	captureThread = std::thread([this]() 
 	{
+		/*cv::Mat frameDummy = cv::imread("assets/images/camera_output_image_10_17.png");
+		cv::Mat resizedDummy;
+		int w = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+		int h = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+		cv::resize(frameDummy, resizedDummy, cv::Size(w, h));*/
+
 		cv::Mat newFrame;
 		while (running) 
 		{

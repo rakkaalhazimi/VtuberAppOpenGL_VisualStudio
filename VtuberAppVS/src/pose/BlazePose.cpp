@@ -90,10 +90,10 @@ BlazePose::BlazePose(const std::wstring& modelPath):
 }
 
 
-std::vector<Ort::Value> BlazePose::pdInference(cv::Mat frame)
+cv::Mat BlazePose::initPdImage(cv::Mat& frame)
 {
   // Resize frame to pose detector input size
-  int inputW = 224, inputH = 224;
+  int inputW = pdScale, inputH = pdScale;
   cv::Mat resized;
   cv::resize(frame, resized, cv::Size(inputW, inputH));
 
@@ -103,9 +103,15 @@ std::vector<Ort::Value> BlazePose::pdInference(cv::Mat frame)
   // Convert to float32 and normalize [0,255] -> [0,1]
   resized.convertTo(resized, CV_32F, 1.0 / 255.0);
 
+  return resized;
+}
+
+
+std::vector<Ort::Value> BlazePose::pdInference(cv::Mat &frame)
+{
   // Copy cv2 image to vector
-  std::vector<float> inputTensorValues(resized.total() * resized.channels());
-  std::memcpy(inputTensorValues.data(), resized.data, inputTensorValues.size() * sizeof(float));
+  std::vector<float> inputTensorValues(frame.total() * frame.channels());
+  std::memcpy(inputTensorValues.data(), frame.data, inputTensorValues.size() * sizeof(float));
 
   // Get Input Names
   std::vector<std::string> inputNames = pdSession->GetInputNames();
@@ -128,7 +134,7 @@ std::vector<Ort::Value> BlazePose::pdInference(cv::Mat frame)
   // Create input tensor
   //Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
   Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-  std::array<int64_t, 4> inputShape = { 1, inputH, inputW, 3 }; // (b, h, w, c)
+  std::array<int64_t, 4> inputShape = { 1, pdScale, pdScale, 3 }; // (b, h, w, c)
   Ort::Value inputTensor = Ort::Value::CreateTensor<float>(
     memoryInfo, inputTensorValues.data(), inputTensorValues.size(), inputShape.data(), inputShape.size()
   );
@@ -290,6 +296,12 @@ std::vector<cv::Point2f> BlazePose::rotatedRectToPoints(
   p0y = (int)p0y;
   p1x = (int)p1x;
   p1y = (int)p1y;
+
+  /*std::cout << p0x << " " << p0y 
+    << " " << p1x << " " << p1y 
+    << " " << p2x << " " << p2y 
+    << " " << p3x << " " << p3y 
+    << std::endl;*/
   
   return { {p0x, p0y}, {p1x, p1y}, {p2x, p2y}, {p3x, p3y} };
 }
@@ -358,10 +370,10 @@ cv::Mat BlazePose::warpRectImg(std::vector<cv::Point2f> &rectPoints, cv::Mat &im
 }
 
 
-std::vector<Landmark> BlazePose::predict(cv::Mat frame)
+std::vector<Ort::Value> BlazePose::lmInference(cv::Mat &frame)
 {
   // Resize frame to model input size (blazpose default is 256x256)
-  int input_w = 256, input_h = 256;
+  int input_w = lmScale, input_h = lmScale;
   cv::Mat resized;
   cv::resize(frame, resized, cv::Size(input_w, input_h));
 
@@ -406,13 +418,13 @@ std::vector<Landmark> BlazePose::predict(cv::Mat frame)
   }
 
   // Run inference
-  std::vector<Ort::Value> output_tensors = session.Run(
+  std::vector<Ort::Value> outputTensors = session.Run(
     Ort::RunOptions{ nullptr },
     inputNamesChar.data(),
     &input_tensor,
     inputNames.size(),
     outputNamesChar.data(),
-    1 // use only the first output [ 1 195 ]
+    outputNames.size()
   );
 
   //std::cout << "Output size: " << outputTensors.size() << std::endl;
@@ -426,11 +438,89 @@ std::vector<Landmark> BlazePose::predict(cv::Mat frame)
     std::cout << "]" << std::endl;
   }*/
 
-  Ort::TensorTypeAndShapeInfo tensorInfo = output_tensors[0].GetTensorTypeAndShapeInfo();
+  Ort::TensorTypeAndShapeInfo tensorInfo = outputTensors[0].GetTensorTypeAndShapeInfo();
   size_t floatCount = tensorInfo.GetElementCount();
-  const float* floatArray = output_tensors[0].GetTensorData<float>();
+  const float* floatArray = outputTensors[0].GetTensorData<float>();
+
+  /*std::cout << "Inference before postprocess: " << std::endl;
+  std::cout << "[ " << std::endl;
+  for (size_t i = 0; i < 10; i++)
+  {
+    std::cout << floatArray[i] << std::endl;
+  }
+  std::cout << "] " << std::endl;*/
+
+  return outputTensors;
+}
+
+
+void BlazePose::lmPostprocess(Region &region, std::vector<Ort::Value> &inferences)
+{
+  float *landmarksData= inferences[0].GetTensorMutableData<float>();
+  auto landmarksInfo = inferences[0].GetTensorTypeAndShapeInfo();
+  auto shape = landmarksInfo.GetShape(); // (1, 195)
+
+  // Normalize x, y and z
+  for (size_t i = 0; i < shape[1]; i+=5)
+  {
+    landmarksData[i] /= lmScale;
+    landmarksData[i + 1] /= lmScale;
+    landmarksData[i + 2] /= lmScale;
+  }
+
+  std::vector<cv::Point2f> src = { {0, 0}, {1, 0}, {1, 1} };
+  std::vector<cv::Point2f> dst(region.rectPoints.begin() + 1, region.rectPoints.end());
+
+  cv::Mat affine = cv::getAffineTransform(src, dst);
+
+  std::vector<cv::Point2f> lmXY;
+  for (size_t i = 0; i < shape[1]; i += 5)
+  {
+    lmXY.emplace_back(landmarksData[i], landmarksData[i + 1]);
+  }
+
+  std::vector<cv::Point2f> transformedXY;
+  cv::transform(lmXY, transformedXY, affine);
+
+  size_t j = 0;
+  for (size_t i = 0; i < shape[1]; i += 5)
+  {
+    landmarksData[i] = transformedXY[j].x;
+    landmarksData[i + 1] = transformedXY[j].y;
+    //landmarksData[i + 2] = landmarksData[i + 2] * region.rectWA / 4;
+    j++;
+  }
+
+  //std::cout << "lmXYZ: " << lmXY[0].x << " " << lmXY[0].y << " " << lmZ[0];
+
+}
+
+
+std::vector<Landmark> BlazePose::predict(cv::Mat &frame)
+{
+  cv::Mat pdFrame = initPdImage(frame);
+  std::vector<Ort::Value> detections = pdInference(pdFrame);
+  Ort::Value& scores = detections[1];
+  Ort::Value& bboxes = detections[0];
+  Region region = decodeBboxes(scores, bboxes);
+  region = detectionToRect(region);
+  rectTransformation(region, pdScale, pdScale);
+
+  cv::Mat frameNew = warpRectImg(region.rectPoints, pdFrame, lmScale, lmScale);
   
-  /*std::cout << "[ " << std::endl;
+  // Create a named window
+  //cv::namedWindow("Displayed Image", cv::WINDOW_AUTOSIZE);
+  // Display the image in the window
+  //cv::imshow("Displayed Image", frameNew);
+
+  std::vector<Ort::Value> inferences = lmInference(frameNew);
+  lmPostprocess(region, inferences);
+
+  Ort::TensorTypeAndShapeInfo tensorInfo = inferences[0].GetTensorTypeAndShapeInfo();
+  size_t floatCount = tensorInfo.GetElementCount();
+  const float* floatArray = inferences[0].GetTensorData<float>();
+  
+  /*std::cout << "Inference after post process: [ " << std::endl;
   for (size_t i = 0; i < 10; i++)
   {
     std::cout << floatArray[i] << std::endl;
@@ -452,7 +542,5 @@ std::vector<Landmark> BlazePose::predict(cv::Mat frame)
   }
   //std::cout << "Landmarks size: " << landmarks.size() << std::endl;
 
-
-  // Tensor ONNX can't be copy, we can move it.
   return landmarks;
 }

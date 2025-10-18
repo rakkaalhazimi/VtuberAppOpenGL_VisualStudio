@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
 
 
 	// UV Scrolling
-	const float targetFPS = 60.0f;
+	const float targetFPS = 20.0f;
 	const float scrollSpeed = 0.2f;  // How fast the texture scrolls (units per second)
 	const float targetFrameTime = 1.0f / targetFPS;  // Time per frame (1 second / target FPS)
 
@@ -299,25 +299,34 @@ int main(int argc, char* argv[]) {
 	//Ort::Session session(env, L"assets/dnn/pose_detection.onnx", sessionOptions);
 
 	BlazePose pose(L"assets/dnn/pose_landmarks_detector_heavy.onnx");
-	cv::Mat frame = cv::imread("assets/images/me.png");
-	std::vector<Ort::Value> detections = pose.pdInference(frame);
+	//cv::Mat frame = cv::imread("assets/images/me.png");
+	cv::Mat frame = cv::imread("assets/images/camera_output_image_10_17.png");
+	/*std::vector<Ort::Value> detections = pose.pdInference(frame);
 	Ort::Value &scores = detections[1];
 	Ort::Value &bboxes = detections[0];
 	Region region = pose.decodeBboxes(scores, bboxes);
 	region = pose.detectionToRect(region);
 	pose.rectTransformation(region, 224, 224);
 
+	cv::Mat frameNew = pose.warpRectImg(region.rectPoints, frame, 256, 256);
+	std::vector<Ort::Value> inferences = pose.lmInference(frameNew);
+	pose.lmPostprocess(region, inferences);*/
 
+	// Create a named window
+	//cv::namedWindow("Displayed Image", cv::WINDOW_AUTOSIZE);
 
-	//std::vector<Landmark> landmarks = pose.predict(frame);
+	// Display the image in the window
+	//cv::imshow("Displayed Image", frameNew);
+
+	std::vector<Landmark> landmarks = pose.predict(frame);
 
 	//YoloPose pose(L"assets/dnn/yolo11n.onnx");
 	//cv::Mat frame = cv::imread("assets/images/me.png");
 	//pose.predict(frame);
 
 	// Pose Draw
-	//PoseDrawer poseDrawer;
-	//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
+	PoseDrawer poseDrawer;
+	poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
@@ -361,10 +370,11 @@ int main(int argc, char* argv[]) {
 			cv::Mat frame = cameraDevice.getFrame();
 			if (!frame.empty())
 			{
-				//std::vector<Landmark> innerLandmarks = pose.predict(frame);
-				//poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::Nose], width, height);
-				//poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::LeftEyeInner], width, height);
-				//poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::RightEyeInner], width, height);
+				/*std::vector<Landmark> innerLandmarks = pose.predict(frame);
+				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::Nose], width, height);
+				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::LeftEyeInner], width, height);
+				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::RightEyeInner], width, height);*/
+				//cv::imwrite("assets/images/camera_output_image_10_17.png", frame);
 			}
 		}
 
@@ -394,6 +404,8 @@ int main(int argc, char* argv[]) {
 
 		// Pose Drawer
 		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
+		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::LeftEyeInner], width, height);
+		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::RightEyeInner], width, height);
 
 		// Device Camera
 		cameraDevice.start(camDeviceShader, width, height, 0.0f, 0.0f);

@@ -102,10 +102,12 @@ public:
   std::vector<std::vector<float>> anchors; // predefined cx, cy, scale_x and scale_y
 
   int pdScale = 224;
+  int lmScale = 256;
   double pi = std::atan(1.0) * 4;
 
 	BlazePose(const std::wstring& modelPath);
-  std::vector<Ort::Value> pdInference(cv::Mat frame); // pose detection
+  cv::Mat initPdImage(cv::Mat &frame);
+  std::vector<Ort::Value> pdInference(cv::Mat &frame); // pose detection
   
   Region decodeBboxes(Ort::Value &scores, Ort::Value &bboxes);
   Region detectionToRect(Region &region);
@@ -115,7 +117,9 @@ public:
   void rectTransformation(Region &region, float w, float h);
   
   cv::Mat warpRectImg(std::vector<cv::Point2f> &rectPoints, cv::Mat &img, float w, float h);
-  void lmInference(); // landmark
+  
+  std::vector<Ort::Value> lmInference(cv::Mat &frame); // landmark
+  void lmPostprocess(Region &region, std::vector<Ort::Value> &inferences);
 
-	std::vector<Landmark> predict(cv::Mat frame);
+	std::vector<Landmark> predict(cv::Mat &frame);
 };
