@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
 	//sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
 	//Ort::Session session(env, L"assets/dnn/pose_detection.onnx", sessionOptions);
 
-	BlazePose pose(L"assets/dnn/pose_landmarks_detector_heavy.onnx");
+	BlazePose pose(L"assets/dnn/pose_landmarks_detector_lite.onnx");
 	//cv::Mat frame = cv::imread("assets/images/me.png");
 	cv::Mat frame = cv::imread("assets/images/camera_output_image_10_17.png");
 	/*std::vector<Ort::Value> detections = pose.pdInference(frame);

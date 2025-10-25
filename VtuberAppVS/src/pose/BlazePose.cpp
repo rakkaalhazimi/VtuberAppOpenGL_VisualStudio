@@ -378,10 +378,12 @@ std::vector<Ort::Value> BlazePose::lmInference(cv::Mat &frame)
   cv::resize(frame, resized, cv::Size(input_w, input_h));
 
   // Convert BGR -> RGB
-  cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+  //cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+  
 
   // Convert to float32 and normalize [0,255] -> [0,1]
-  resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+  //resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+
 
   //std::cout << "Channels: " << resized.channels() << std::endl;
 
