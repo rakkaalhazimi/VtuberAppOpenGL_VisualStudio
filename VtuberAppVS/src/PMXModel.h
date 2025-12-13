@@ -49,6 +49,7 @@ class PMXModel
     std::vector<Texture> textures;
     std::vector<PMXMaterial> materials;
     std::vector<BoneModel> bones;
+    std::vector<PMXBone> bonesPmx;
     std::vector<PMXMorph> morphs;
     
     std::unordered_map<int, std::vector<int>> boneChildren;

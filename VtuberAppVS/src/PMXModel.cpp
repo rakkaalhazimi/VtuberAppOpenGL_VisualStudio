@@ -17,7 +17,8 @@ PMXModel::PMXModel(PMXFile &pmxFile)
         glm::vec3(0.0f), // rotation
       }
     );
-    
+    // Add pmx original bones
+    bonesPmx.push_back(pmxFile.bones[i]);
   }
   
   boneMatrices = std::vector<glm::mat4>(pmxFile.bones.size(), glm::mat4(1.0f));

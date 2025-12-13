@@ -16,8 +16,15 @@ void PMXEditorGUI::draw()
     
   if (ImGui::CollapsingHeader("Bones"))
   {
-    for (size_t i: boneIndices)
+    for (size_t i = 0; i < model.bonesPmx.size(); i++)
     {
+      PMXBone currentBonePMX = model.bonesPmx[i];
+      if (!((currentBonePMX.boneFlag & BoneFlag::ROTATABLE) 
+          && (currentBonePMX.boneFlag & BoneFlag::CAN_OPERATE)))
+    {
+        continue;
+      }
+
       BoneModel currentBone = model.bones[i];
       glm::vec3 currentBoneRotation = currentBone.rotation;
       
