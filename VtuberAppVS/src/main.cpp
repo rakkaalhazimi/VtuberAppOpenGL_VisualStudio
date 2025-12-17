@@ -29,9 +29,9 @@
 #include "commands/RotateBoneCommand.h"
 #include "gui/PMXEditorGUI.h"
 #include "Mesh.h"
-#include "PoseEstimation.h"
-#include "pose/BlazePose.h"
-#include "pose/PoseDrawer.h"
+//#include "PoseEstimation.h"
+//#include "pose/BlazePose.h"
+//#include "pose/PoseDrawer.h"
 #include "PMXFile.h"
 #include "PMXModel.h"
 #include "RayCaster.h"
@@ -237,6 +237,7 @@ int main(int argc, char* argv[]) {
 
 
 	// Moving limb test
+	// 50 = Left Shoulder Index
 	// 55 = Left Arm Index
 	// 60 = Left Elbow Index
 	// 65 = Left Wrist Index
@@ -251,6 +252,19 @@ int main(int argc, char* argv[]) {
 		<< vectorBase.y
 		<< " "
 		<< vectorBase.z << std::endl;
+
+	auto leftShoulder = feixiaoModel.bones[50].restPosition;
+	auto leftArm = feixiaoModel.bones[55].restPosition;
+	auto leftElbow = feixiaoModel.bones[60].restPosition;
+	auto leftWrist = feixiaoModel.bones[65].restPosition;
+	std::cout << "Left Shoulder: " << std::endl;
+	std::cout << leftShoulder.x << " " << leftShoulder.y << " " << leftShoulder.z << std::endl;
+	std::cout << "Left Arm: " << std::endl;
+	std::cout << leftArm.x << " " << leftArm.y << " " << leftArm.z << std::endl;
+	std::cout << "Left Elbow: " << std::endl;
+	std::cout << leftElbow.x << " " << leftElbow.y << " " << leftElbow.z << std::endl;
+	std::cout << "Left Wrist: " << std::endl;
+	std::cout << leftWrist.x << " " << leftWrist.y << " " << leftWrist.z << std::endl;
 
 	glm::vec3 vectorTarget = glm::vec3(0.2f, 0.8f, 0.4f);
 
@@ -298,9 +312,9 @@ int main(int argc, char* argv[]) {
 	//sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
 	//Ort::Session session(env, L"assets/dnn/pose_detection.onnx", sessionOptions);
 
-	BlazePose pose(L"assets/dnn/pose_landmarks_detector_lite.onnx");
+	//BlazePose pose(L"assets/dnn/pose_landmarks_detector_lite.onnx");
 	//cv::Mat frame = cv::imread("assets/images/me.png");
-	cv::Mat frame = cv::imread("assets/images/camera_output_image_10_17.png");
+	//cv::Mat frame = cv::imread("assets/images/camera_output_image_10_17.png");
 	/*std::vector<Ort::Value> detections = pose.pdInference(frame);
 	Ort::Value &scores = detections[1];
 	Ort::Value &bboxes = detections[0];
@@ -318,15 +332,15 @@ int main(int argc, char* argv[]) {
 	// Display the image in the window
 	//cv::imshow("Displayed Image", frameNew);
 
-	std::vector<Landmark> landmarks = pose.predict(frame);
+	//std::vector<Landmark> landmarks = pose.predict(frame);
 
 	//YoloPose pose(L"assets/dnn/yolo11n.onnx");
 	//cv::Mat frame = cv::imread("assets/images/me.png");
 	//pose.predict(frame);
 
 	// Pose Draw
-	PoseDrawer poseDrawer;
-	poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
+	//PoseDrawer poseDrawer;
+	//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
@@ -370,8 +384,14 @@ int main(int argc, char* argv[]) {
 			cv::Mat frame = cameraDevice.getFrame();
 			if (!frame.empty())
 			{
+				//pose.sendFrame(frame);
+				//std::vector<Landmark> innerLandmarks = pose.getLatestLandmarks();
 				/*std::vector<Landmark> innerLandmarks = pose.predict(frame);
-				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::Nose], width, height);
+				for (size_t i = 0; i < 10; i++)
+				{
+					poseDrawer.Draw(poseDrawerShader, innerLandmarks[i], width, height);
+				}*/
+				/*poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::Nose], width, height);
 				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::LeftEyeInner], width, height);
 				poseDrawer.Draw(poseDrawerShader, innerLandmarks[(int)BlazePoseKeypoint::RightEyeInner], width, height);*/
 				//cv::imwrite("assets/images/camera_output_image_10_17.png", frame);
@@ -403,6 +423,10 @@ int main(int argc, char* argv[]) {
 		const bool unlocked = glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS;
 
 		// Pose Drawer
+		/*for (size_t i = 0; i < 10; i++)
+		{
+			poseDrawer.Draw(poseDrawerShader, landmarks[i], width, height);
+		}*/
 		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::Nose], width, height);
 		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::LeftEyeInner], width, height);
 		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::RightEyeInner], width, height);
