@@ -1,10 +1,26 @@
-#include "gui/PMXEditorGUI.h"
+﻿#include "gui/PMXEditorGUI.h"
 
 
 PMXEditorGUI::PMXEditorGUI(PMXModel &model, CommandManager &cmdManager): 
   model(model), commandManager(commandManager) 
 {
-  
+  std::string content;
+  std::ifstream infile("assets/text/bones-common-rotate.txt");
+  while (std::getline(infile, content)) 
+  {
+    auto pos = content.find(' ');
+    if (pos != std::string::npos)
+    {
+      std::string localName = content.substr(0, pos);
+      std::string globalName = content.substr(pos + 1);
+      boneMap[localName] = globalName;
+    }
+  }
+  /*for (size_t i = 0; i < model.bonesPmx.size(); i++)
+  {
+    PMXBone currentBonePMX = model.bonesPmx[i];
+    std::cout << currentBonePMX.nameLocal << std::endl;
+  }*/
 }
 
 void PMXEditorGUI::draw()
@@ -19,16 +35,18 @@ void PMXEditorGUI::draw()
     for (size_t i = 0; i < model.bonesPmx.size(); i++)
     {
       PMXBone currentBonePMX = model.bonesPmx[i];
-      if (!((currentBonePMX.boneFlag & BoneFlag::ROTATABLE) 
-          && (currentBonePMX.boneFlag & BoneFlag::CAN_OPERATE)))
-    {
+      // Skip non-common bones
+      auto it = boneMap.find(currentBonePMX.nameLocal);
+      if (it == boneMap.end())
+      {
         continue;
       }
 
       BoneModel currentBone = model.bones[i];
       glm::vec3 currentBoneRotation = currentBone.rotation;
+      std::string showedBoneName = boneMap[currentBonePMX.nameLocal];
       
-      if (ImGui::TreeNode(currentBone.nameLocal.c_str()))
+      if (ImGui::TreeNode(showedBoneName.c_str()))
       {
         // previousRotation = boneRotation;
         bool isSliderXActive = ImGui::SliderFloat("rotation-x", &currentBoneRotation.x, -glm::pi<float>(), glm::pi<float>(), "%.3f");

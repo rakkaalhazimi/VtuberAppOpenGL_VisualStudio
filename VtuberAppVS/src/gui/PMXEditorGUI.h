@@ -1,5 +1,8 @@
 #pragma once
 
+#include<map>
+#include<string>
+
 #include<glm/gtc/matrix_transform.hpp>
 #include<imgui/imgui.h>
 #include<imgui/imgui_impl_glfw.h>
@@ -15,6 +18,7 @@ class PMXEditorGUI
     PMXModel &model;
     CommandManager &commandManager;
     std::vector<int> boneIndices = { 16, 55, 60 };
+    std::map<std::string, std::string> boneMap;
     
   public:
     PMXEditorGUI(PMXModel &model, CommandManager &commandManager);
