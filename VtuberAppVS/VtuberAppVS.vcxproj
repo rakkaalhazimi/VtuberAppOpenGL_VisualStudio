@@ -540,12 +540,15 @@
     <ClInclude Include="src\PoseEstimation.h" />
     <ClInclude Include="src\pose\BlazePose.h" />
     <ClInclude Include="src\pose\PoseDrawer.h" />
+    <ClInclude Include="src\pose\YoloPose.h" />
     <ClInclude Include="src\RayCaster.h" />
     <ClInclude Include="src\Selector.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\TextRenderer.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\UsedBones.h" />
+    <ClInclude Include="src\Utils.h" />
+    <ClInclude Include="src\VMDFile.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\camera-device.frag" />
@@ -713,12 +716,18 @@
     <ClCompile Include="src\PoseEstimation.cpp" />
     <ClCompile Include="src\pose\BlazePose.cpp" />
     <ClCompile Include="src\pose\PoseDrawer.cpp" />
+    <ClCompile Include="src\pose\YoloPose.cpp" />
     <ClCompile Include="src\RayCaster.cpp" />
     <ClCompile Include="src\Selector.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\stb.cpp" />
     <ClCompile Include="src\TextRenderer.cpp" />
     <ClCompile Include="src\Texture.cpp" />
+    <ClCompile Include="src\Utils.cpp" />
+    <ClCompile Include="src\VMDFile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="assets\text\bones-common-rotate.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

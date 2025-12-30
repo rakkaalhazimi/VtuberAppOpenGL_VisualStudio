@@ -38,6 +38,8 @@
 #include "Selector.h"
 #include "Texture.h"
 #include "TextRenderer.h"
+#include "Utils.h"
+#include "VMDFile.h"
 
 
 
@@ -189,6 +191,17 @@ int main(int argc, char* argv[]) {
 
 	// Selector
 	Selector selector;
+
+
+	// VMDFile
+	VMDFile vmdFile("assets/vmd/walk.vmd");
+	for (auto& item : vmdFile.m_motions)
+	{
+		std::cout << Utils::sjis_to_utf8(item.m_boneName) << std::endl;
+		std::cout << item.m_frame << std::endl;
+		//std::cout << item.m_interpolation << std::endl;
+		//std::cout << item.m_quaternion << std::endl;
+	}
 
 
 	// PMXFile
