@@ -144,11 +144,11 @@ void PMXModel::Update()
   for (size_t i = 0; i < bones.size(); i++)
   {
     BoneModel bone = bones[i];
-    localTransform[i] = 
+    localTransform[i] =
+      glm::translate(glm::mat4(1.0f), bone.position) *
       glm::translate(glm::mat4(1.0f), bone.restPosition) *
-      glm::toMat4(glm::quat(bone.rotation)) * 
-      glm::translate(glm::mat4(1.0f), -bone.restPosition) *
-      glm::translate(glm::mat4(1.0f), bone.position);
+      glm::toMat4(glm::quat(bone.rotation)) *
+      glm::translate(glm::mat4(1.0f), -bone.restPosition);
     
     if (bone.parentBoneIndex > 0)
     {
