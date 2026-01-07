@@ -7,16 +7,58 @@ PMXModel::PMXModel(PMXFile &pmxFile)
   {
     int parent = pmxFile.bones[i].parentBoneIndex;
     boneChildren[parent].push_back(i);
+    
+    bool hasAddTranslation = (bool)(pmxFile.bones[i].boneFlag & BoneFlag::ADD_MOVEMENT);
+    bool hasAddRotation = (bool)(pmxFile.bones[i].boneFlag & BoneFlag::ADD_ROTATION);
+
     bones.push_back(
       {
         pmxFile.bones[i].nameLocal,
         pmxFile.bones[i].nameGlobal,
         pmxFile.bones[i].parentBoneIndex,
-        pmxFile.bones[i].position, // rest position
-        glm::vec3(0.0f), // position
-        glm::vec3(0.0f), // rotation
+        pmxFile.bones[i].additionalParentIndex,
+        pmxFile.bones[i].additionalRate,
+        pmxFile.bones[i].position,                                  // rest position
+        glm::vec3(0.0f),                                            // position
+        glm::vec3(0.0f),                                            // rotation
+        hasAddTranslation,
+        hasAddRotation,
       }
     );
+
+    if (hasAddTranslation || hasAddRotation)
+    {
+      addParentIndexList.insert(pmxFile.bones[i].additionalParentIndex);
+    }
+
+    if (pmxFile.bones[i].ikBoneIndex > 0)
+    {
+      //auto currentBone = pmxFile.bones[i];
+      //std::cout << "Current Bone index: " << i << std::endl;
+      ////std::cout << "Current Bone Flag: " << currentBone.boneFlag << std::endl;
+      //std::cout << "Additional Parent Index: " << currentBone.additionalParentIndex << std::endl;
+      //std::cout << "Additional Rate: " << currentBone.additionalRate << std::endl;
+      //std::cout << "Parent Index: " << currentBone.parentBoneIndex << std::endl;
+      //std::cout << "Has add rotate: " << bones[i].hasAddRotation << std::endl;
+      //std::cout << "Has add translate: " << bones[i].hasAddTranslation << std::endl;
+      //std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
+      //std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
+      //std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
+
+      //if (currentBone.ikLinks.size() < 1)
+      //{
+      //}
+      //else
+      //{
+      //  for (size_t j = 0; j < currentBone.ikLinkCount; j++)
+      //  {
+      //    auto currentLink = currentBone.ikLinks[j];
+      //    std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
+      //  }
+      //}
+      //std::cout << std::endl;
+    }
+
     // Add pmx original bones
     bonesPmx.push_back(pmxFile.bones[i]);
   }
@@ -24,6 +66,8 @@ PMXModel::PMXModel(PMXFile &pmxFile)
   boneMatrices = std::vector<glm::mat4>(pmxFile.bones.size(), glm::mat4(1.0f));
   localTransform = boneMatrices;
   globalTransform = boneMatrices;
+
+  addTranslation = std::vector<glm::vec3>(pmxFile.bones.size(), glm::vec3(0.0f));
   
   // Vertices
   // Convert vertices from PMXFile -> PMXModel  
@@ -41,7 +85,7 @@ PMXModel::PMXModel(PMXFile &pmxFile)
     {
         boneWeightsVec[i] = item.weights[i];
     }
-    
+
     vertices.push_back(
       VertexModel
       {
@@ -141,6 +185,7 @@ void PMXModel::UpdateMorph(float &weight)
 
 void PMXModel::Update()
 {
+  // Local Transform
   for (size_t i = 0; i < bones.size(); i++)
   {
     BoneModel bone = bones[i];
@@ -149,17 +194,48 @@ void PMXModel::Update()
       glm::translate(glm::mat4(1.0f), bone.restPosition) *
       glm::toMat4(glm::quat(bone.rotation)) *
       glm::translate(glm::mat4(1.0f), -bone.restPosition);
-    
+  }
+
+  // Additional Transform
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    BoneModel bone = bones[i];
+    glm::vec3 addTranslation(0.0f);
+    glm::quat addRotation(1, 0, 0, 0);
+    if (bone.hasAddTranslation)
+    {
+      addTranslation = localTransform[bone.addParentIndex][3] * bone.additionalRate;
+    }
+    if (bone.hasAddRotation)
+    {
+      glm::quat parentRotation = glm::quat_cast(glm::mat3(localTransform[bone.addParentIndex]));
+      addRotation = glm::slerp(
+        glm::quat(1, 0, 0, 0),
+        parentRotation,
+        bone.additionalRate
+      );
+    }
+    localTransform[i] *=
+      glm::translate(glm::mat4(1.0f), addTranslation) *
+      glm::translate(glm::mat4(1.0f), bone.restPosition) *
+      glm::toMat4(addRotation) *
+      glm::translate(glm::mat4(1.0f), -bone.restPosition);
+  }
+
+  // Global Transform
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    BoneModel bone = bones[i];
     if (bone.parentBoneIndex > 0)
     {
       globalTransform[i] = globalTransform[bone.parentBoneIndex] * localTransform[i];
     }
-    else 
+    else
     {
       globalTransform[i] = localTransform[i];
     }
   }
-  
+
   boneMatrices = globalTransform;
 }
 

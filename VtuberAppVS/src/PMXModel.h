@@ -31,11 +31,15 @@ struct BoneModel
   std::string nameGlobal;
   
   int32_t parentBoneIndex;
+  int32_t addParentIndex;
+  float additionalRate;
   
   glm::vec3 restPosition;
-  
   glm::vec3 position;
   glm::vec3 rotation;
+
+  bool hasAddTranslation;
+  bool hasAddRotation;
 };
 
 class PMXModel
@@ -55,6 +59,10 @@ class PMXModel
     std::unordered_map<int, std::vector<int>> boneChildren;
     
     std::vector<glm::mat4> boneMatrices;
+
+    std::set<int32_t> addParentIndexList;
+    std::vector<glm::vec3> addTranslation;
+    std::vector<glm::quat> addRotation;
     
     std::vector<glm::mat4> globalTransform;
     std::vector<glm::mat4> localTransform;
