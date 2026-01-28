@@ -10,6 +10,8 @@
 	#include <windows.h>
 #endif
 
+#include "glm/glm.hpp"
+
 
 
 namespace Utils
@@ -32,4 +34,5 @@ namespace Utils
 
 	// Logging
 	void printHex(const char* data, size_t size);
+	void printVector(glm::vec3& vector, const char* name = "Vector");
 };

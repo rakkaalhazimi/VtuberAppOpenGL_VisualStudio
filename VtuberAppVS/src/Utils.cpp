@@ -74,3 +74,9 @@ void Utils::printHex(const char* data, size_t size)
   }
   std::cout << std::dec << '\n';
 }
+
+
+void Utils::printVector(glm::vec3& vector, const char* name)
+{
+  std::cout << name << " : " << vector.x << " " << vector.y << " " << vector.z << std::endl;
+}
