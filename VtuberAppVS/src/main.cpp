@@ -28,6 +28,7 @@
 #include "commands/CommandManager.h"
 #include "commands/RotateBoneCommand.h"
 #include "gui/PMXEditorGUI.h"
+#include "InverseKinematics.h"
 #include "Mesh.h"
 //#include "PoseEstimation.h"
 //#include "pose/BlazePose.h"
@@ -311,6 +312,25 @@ int main(int argc, char* argv[]) {
 
 	// Camera Device
 	CameraDevice cameraDevice;
+
+	// IK Test
+	/*std::vector<glm::vec3> jointTest = 
+	{ 
+		glm::vec3(0.0f), 
+		glm::vec3(1.0f, 0.0f, 0.0f), 
+		glm::vec3(2.0f, 0.0f, 0.0f),
+	};
+	glm::vec3 effectorTest = glm::vec3(3.0f, 0.0f, 0.0f);
+	glm::vec3 targetTest = glm::vec3(0.0f, 10.0f, 0.0f);*/
+
+	std::vector<glm::vec3> jointTest = 
+	{ 
+		glm::vec3(0.819469f, 1.69394f, 0.743995f),
+	};
+	glm::vec3 effectorTest = glm::vec3(0.741878f, -0.651976f, 1.40664f);
+	glm::vec3 targetTest = glm::vec3(0.844506f, 10.2131f, -1.20874f);
+
+	IK::solve3DJointCCD(jointTest, effectorTest, targetTest, 20);
 
 	// Pose Estimation
 	//Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "PoseEstimation");
