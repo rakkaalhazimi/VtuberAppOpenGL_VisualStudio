@@ -701,6 +701,7 @@
     <ClCompile Include="src\CameraDevice.cpp" />
     <ClCompile Include="src\commands\CommandManager.cpp" />
     <ClCompile Include="src\commands\RotateBoneCommand.cpp" />
+    <ClCompile Include="src\commands\TranslateBoneCommand.cpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\gui\PMXEditorGUI.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
@@ -710,6 +711,7 @@
     <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\InverseKinematics.cpp" />
     <ClCompile Include="src\leftover.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -730,6 +732,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="assets\text\bones-common-rotate.txt" />
+    <Text Include="assets\text\bones.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
