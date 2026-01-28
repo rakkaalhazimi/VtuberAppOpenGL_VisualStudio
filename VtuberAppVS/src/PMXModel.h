@@ -10,9 +10,11 @@
 #include<glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "InverseKinematics.h"
 #include "PMXFile.h"
 #include "shader.h"
 #include "Texture.h"
+#include "Utils.h"
 
 
 
@@ -37,6 +39,9 @@ struct BoneModel
   glm::vec3 restPosition;
   glm::vec3 position;
   glm::vec3 rotation;
+  glm::vec3 addTranslation;
+  glm::quat addRotation;
+  glm::quat ikRotation;
 
   bool hasAddTranslation;
   bool hasAddRotation;
@@ -67,10 +72,24 @@ class PMXModel
     std::vector<glm::mat4> globalTransform;
     std::vector<glm::mat4> localTransform;
     
+    std::vector<BoneNode> boneTree;
+    bool hasPrint = false;
+    
     PMXModel(PMXFile &pmxFile);
+    void GetBoneSubtree(int index, std::vector<int> &out);
     void UpdateMorph(float &weight);
+    void UpdateIKTransform(int index);
+    void UpdateLocalTransform(int index);
+    void UpdateAdditionalTransform(int index);
+    void UpdateChildrenGlobalTransform(int index);
+    void UpdateGlobalTransform(int index);
     void Update();
     void Draw(Shader& shader);
+    glm::vec3 GetBoneWorldPosition(int index, bool isLog = false);
+    glm::vec3 GetBoneWorldDist(int indexA, int indexB, bool isLog = false);
+    glm::quat GetParentBoneWorldRot(int index, bool isLog = false);
+    float GetIKChainLength(int targetIndex);
+    float GetIKRelativeChainLength(int targetIndex);
     
   private:
     

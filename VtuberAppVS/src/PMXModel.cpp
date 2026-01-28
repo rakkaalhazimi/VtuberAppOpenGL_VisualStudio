@@ -21,6 +21,9 @@ PMXModel::PMXModel(PMXFile &pmxFile)
         pmxFile.bones[i].position,                                  // rest position
         glm::vec3(0.0f),                                            // position
         glm::vec3(0.0f),                                            // rotation
+        glm::vec3(0.0f),                                            // addTranslation
+        glm::quat(1, 0, 0, 0),                                      // addRotation
+        glm::quat(1, 0, 0, 0),                                      // ikRotation
         hasAddTranslation,
         hasAddRotation,
       }
@@ -33,30 +36,31 @@ PMXModel::PMXModel(PMXFile &pmxFile)
 
     if (pmxFile.bones[i].ikBoneIndex > 0)
     {
-      //auto currentBone = pmxFile.bones[i];
-      //std::cout << "Current Bone index: " << i << std::endl;
+      auto currentBone = pmxFile.bones[i];
+
+      if (currentBone.ikLinks.size() < 1)
+      {
+      }
+      else
+      {
+        std::cout << "Current Bone index: " << i << std::endl;
       ////std::cout << "Current Bone Flag: " << currentBone.boneFlag << std::endl;
       //std::cout << "Additional Parent Index: " << currentBone.additionalParentIndex << std::endl;
       //std::cout << "Additional Rate: " << currentBone.additionalRate << std::endl;
       //std::cout << "Parent Index: " << currentBone.parentBoneIndex << std::endl;
       //std::cout << "Has add rotate: " << bones[i].hasAddRotation << std::endl;
       //std::cout << "Has add translate: " << bones[i].hasAddTranslation << std::endl;
-      //std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
-      //std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
-      //std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
-
-      //if (currentBone.ikLinks.size() < 1)
-      //{
-      //}
-      //else
-      //{
-      //  for (size_t j = 0; j < currentBone.ikLinkCount; j++)
-      //  {
-      //    auto currentLink = currentBone.ikLinks[j];
-      //    std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
-      //  }
-      //}
-      //std::cout << std::endl;
+        std::cout << "Bone position: " << currentBone.position.x << " " << currentBone.position.y << " " << currentBone.position.z << std::endl;
+        std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
+        std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
+        std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
+        for (size_t j = 0; j < currentBone.ikLinkCount; j++)
+        {
+          auto currentLink = currentBone.ikLinks[j];
+          std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
+        }
+        std::cout << std::endl;
+      }
     }
 
     // Add pmx original bones
@@ -162,6 +166,22 @@ PMXModel::PMXModel(PMXFile &pmxFile)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+
+// Get children and grandchildren of the bone
+void PMXModel::GetBoneSubtree(int index, std::vector<int>& out)
+{
+  if (boneChildren.find(index) != boneChildren.end())
+  {
+    for (int childIndex : boneChildren[index])
+    {
+      //std::cout << "Child Index: " << childIndex << std::endl;
+      out.push_back(childIndex);
+      GetBoneSubtree(childIndex, out);
+    }
+  }
+}
+
+
 void PMXModel::UpdateMorph(float &weight)
 {
   // Wink right: ウィンク右
@@ -183,23 +203,36 @@ void PMXModel::UpdateMorph(float &weight)
   }
 }
 
-void PMXModel::Update()
+
+void PMXModel::UpdateLocalTransform(int index)
 {
-  // Local Transform
-  for (size_t i = 0; i < bones.size(); i++)
+  BoneModel bone = bones[index];
+  localTransform[index] =
+    glm::translate(glm::mat4(1.0f), bone.position + bone.addTranslation) *
+    glm::translate(glm::mat4(1.0f), bone.restPosition) *
+    glm::toMat4(glm::quat(bone.ikRotation)) *
+    glm::toMat4(glm::quat(bone.rotation)) *
+    glm::toMat4(glm::quat(bone.addRotation)) *
+    glm::translate(glm::mat4(1.0f), -bone.restPosition);
+}
+
+
+void PMXModel::UpdateIKTransform(int index)
   {
-    BoneModel bone = bones[i];
-    localTransform[i] =
-      glm::translate(glm::mat4(1.0f), bone.position) *
+  BoneModel bone = bones[index];
+  localTransform[index] =
+    glm::translate(glm::mat4(1.0f), bone.position + bone.addTranslation) *
       glm::translate(glm::mat4(1.0f), bone.restPosition) *
+    glm::toMat4(glm::quat(glm::vec3(3.0f, 0.0f, 3.0f))) *
       glm::toMat4(glm::quat(bone.rotation)) *
+    glm::toMat4(glm::quat(bone.addRotation)) *
       glm::translate(glm::mat4(1.0f), -bone.restPosition);
   }
 
-  // Additional Transform
-  for (size_t i = 0; i < bones.size(); i++)
+
+void PMXModel::UpdateAdditionalTransform(int index)
   {
-    BoneModel bone = bones[i];
+  BoneModel bone = bones[index];
     glm::vec3 addTranslation(0.0f);
     glm::quat addRotation(1, 0, 0, 0);
     if (bone.hasAddTranslation)
@@ -215,25 +248,182 @@ void PMXModel::Update()
         bone.additionalRate
       );
     }
-    localTransform[i] *=
-      glm::translate(glm::mat4(1.0f), addTranslation) *
-      glm::translate(glm::mat4(1.0f), bone.restPosition) *
-      glm::toMat4(addRotation) *
-      glm::translate(glm::mat4(1.0f), -bone.restPosition);
+  bones[index].addTranslation = addTranslation;
+  bones[index].addRotation = addRotation;
+  UpdateLocalTransform(index);
   }
 
-  // Global Transform
-  for (size_t i = 0; i < bones.size(); i++)
+
+// Update the global transform of children and predecessors
+void PMXModel::UpdateChildrenGlobalTransform(int index)
   {
-    BoneModel bone = bones[i];
+  std::vector<int> chainIndex;
+  GetBoneSubtree(index, chainIndex);
+  for (int i : chainIndex)
+  {
+    //std::cout << "Current index: " << i << std::endl;
+    UpdateAdditionalTransform(i);
+    UpdateGlobalTransform(i);
+  }
+}
+
+
+void PMXModel::UpdateGlobalTransform(int index)
+{
+  BoneModel bone = bones[index];
     if (bone.parentBoneIndex > 0)
     {
-      globalTransform[i] = globalTransform[bone.parentBoneIndex] * localTransform[i];
+    globalTransform[index] = globalTransform[bone.parentBoneIndex] * localTransform[index];
     }
     else
     {
-      globalTransform[i] = localTransform[i];
+    globalTransform[index] = localTransform[index];
+  }
+}
+
+
+void PMXModel::Update()
+{
+  // Local Transform
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    UpdateLocalTransform(i);
+  }
+
+  // Additional and Global Transform (for Pre-IK)
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    UpdateAdditionalTransform(i);
+    UpdateGlobalTransform(i);
+  }
+
+  // IK Transform
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    PMXBone pmxBone = bonesPmx[i];
+    if (pmxBone.ikLinks.size() < 1)
+    {
+      continue;
     }
+
+    int effectorIndex = pmxBone.ikBoneIndex;
+    int targetIndex = i;
+    glm::vec3 effector = GetBoneWorldPosition(effectorIndex);
+    glm::vec3 target = GetBoneWorldPosition(targetIndex);
+
+    if (targetIndex == 7)
+    {
+      //pmxBone.ikIteration = 10;
+    }
+
+    // PROBLEM: with high iteration, the effector seems to back and forth between two specific values. 
+    //          something might be wrong on how we update the joint.
+    // Iteration: 1
+    // Angle : 0.314159
+    // Joint : : 0.819469 1.69394 0.743995
+    // Effector : : 0.741878 - 0.651976 1.40664
+    // Target : : 0.844506 10.2131 - 1.20874
+    // 
+    // Iteration : 2
+    // Angle : 0.314159
+    // Joint : : 0.819469 1.69394 0.743995
+    // Effector : : 1.08322 - 0.729479 0.820845
+    // Target : : 0.844506 10.2131 - 1.20874
+
+    // DISCOVERY: The CCD Algorithm below is work, something might be wrong with how we update the delta rotation
+
+
+    
+    // CCD Algorithm
+    for (size_t j = 0; j < pmxBone.ikIteration; j++)
+    {
+      // Early stop when effector and target are close
+      float dist = glm::distance2(effector, target);
+      if (dist < 1e-3)
+      {
+        break;
+      }
+
+      // Rotate from Joint that is closer to Effector
+      for (int k = 0; k < pmxBone.ikLinks.size(); k++)
+      {
+        effector = GetBoneWorldPosition(effectorIndex);
+        target = GetBoneWorldPosition(targetIndex);
+        int jointIndex = pmxBone.ikLinks[k].ikBoneIndex;
+        glm::vec3 joint = GetBoneWorldPosition(jointIndex);
+        IK::axisAngle3D result = IK::solveAxisAngle3D(joint, effector, target);
+
+        if (result.angle <= 1e-6 || glm::length(result.axis) <= 1e-6)
+        {
+          //continue;
+          break;
+        }
+
+        result.angle = glm::clamp(result.angle, -pmxBone.ikLimitAngle, pmxBone.ikLimitAngle);
+        result.angle *= 0.1f;
+
+        if (effectorIndex == 87 && !hasPrint)
+        {
+          /*std::cout << "Iteration: " << j << std::endl;
+          std::cout << "Angle: " << result.angle << std::endl;
+          Utils::printVector(joint, "Joint: ");
+          Utils::printVector(result.axis, "Axis: ");
+          Utils::printVector(effector, "Effector: ");
+          Utils::printVector(target, "Target: ");*/
+          //std::cout << std::endl;
+        }
+
+        // Rotate all children of Joint
+        glm::quat deltaRotation = glm::angleAxis(result.angle, result.axis);
+        bones[jointIndex].ikRotation *= deltaRotation;
+
+        //effector = IK::rotatePointAround3D(effector, joint, result.axis, result.angle);
+
+        UpdateLocalTransform(jointIndex);
+        UpdateGlobalTransform(jointIndex);
+        UpdateChildrenGlobalTransform(jointIndex);
+        if (effectorIndex == 87 && !hasPrint)
+        {
+          /*effector = GetBoneWorldPosition(effectorIndex);
+          Utils::printVector(effector, "Effector After: ");
+          std::cout << std::endl;*/
+        }
+        break;
+
+        for (int l = k - 1; l >= 0; --l)
+        {
+          //int jointChildIndex = pmxBone.ikLinks[l].ikBoneIndex;
+          //bones[jointChildIndex].ikRotation = deltaRotation;
+          //UpdateLocalTransform(jointChildIndex);
+          //UpdateGlobalTransform(jointChildIndex);
+        }
+      }
+      // (joint-84) == (joint-85) == (effector-86)
+      // Joint 85 rotate (moves effector)
+      // Joint 84 rotate (moves joint 85)
+      if (pmxBone.ikBoneIndex == 87)
+      {
+        //Utils::printVector(effector, "Effector");
+        //UpdateGlobalTransform(86);
+        //UpdateChildrenGlobalTransform(86);
+      }
+
+
+      if (j == 20)
+      {
+        hasPrint = true;
+      }
+    }
+    // End CCD Algorithm
+    }
+  // End IK Transform
+
+  // Bone 84, 85, 86 are moved by additional transform
+  // NOTE: to update single bone, you need to update all of its children
+  // Global Transform (for Rendering)
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    UpdateGlobalTransform(i);
   }
 
   boneMatrices = globalTransform;
@@ -273,4 +463,84 @@ void PMXModel::Draw(Shader &shader)
     
     indexOffset += indexCount;
   }
+}
+
+
+glm::vec3 PMXModel::GetBoneWorldPosition(int index, bool isLog)
+{
+  glm::vec3 pos = globalTransform[index] * glm::vec4(bones[index].restPosition, 1.0f); // change target position
+  //glm::vec3 pos = globalTransform[index][3];
+  if (isLog)
+  {
+    std::cout << "Bone: " << index 
+      << " position: " 
+      << pos.x << " " 
+      << pos.y << " " 
+      << pos.z << std::endl;
+  }
+  return pos;
+}
+
+
+glm::vec3 PMXModel::GetBoneWorldDist(int indexA, int indexB, bool isLog)
+{
+  glm::vec3 posA = GetBoneWorldPosition(indexA);
+  glm::vec3 posB = GetBoneWorldPosition(indexB);
+  float dist = glm::distance2(posA, posB);
+  //glm::vec3 pos = bones[index].restPosition;
+  if (isLog)
+  {
+    std::cout << "Bone: " << indexA << " " << indexB
+      << " distance: " << dist << std::endl;
+  }
+  return posA;
+}
+
+
+float PMXModel::GetIKChainLength(int targetIndex)
+{
+  float chainLength = 0.0f;
+  int effectorIndex = bonesPmx[targetIndex].ikBoneIndex;
+  int prev = effectorIndex;
+  for (const auto& link : bonesPmx[targetIndex].ikLinks)
+  {
+    int curr = link.ikBoneIndex;
+    chainLength += glm::distance(
+      GetBoneWorldPosition(prev),
+      GetBoneWorldPosition(curr)
+    );
+    prev = curr;
+  }
+  return chainLength;
+}
+
+
+float PMXModel::GetIKRelativeChainLength(int targetIndex)
+{
+  float chainLength = 0.0f;
+  int prev = targetIndex;
+  for (const auto& link : bonesPmx[targetIndex].ikLinks)
+  {
+    int curr = link.ikBoneIndex;
+    chainLength += glm::distance(
+      GetBoneWorldPosition(prev),
+      GetBoneWorldPosition(curr)
+    );
+    prev = curr;
+  }
+  return chainLength;
+}
+
+
+glm::quat PMXModel::GetParentBoneWorldRot(int index, bool isLog)
+{
+  BoneModel bone = bones[index];
+  glm::quat parentRot = glm::quat_cast(globalTransform[index]);
+  glm::vec3 euler = glm::eulerAngles(parentRot);
+  if (isLog)
+  {
+    std::cout << "index: " << index << std::endl;
+    Utils::printVector(euler, "Parent world rotation");
+  }
+  return parentRot;
 }
