@@ -44,6 +44,7 @@ void PMXEditorGUI::draw()
 
       BoneModel currentBone = model.bones[i];
       glm::vec3 currentBoneRotation = currentBone.rotation;
+      glm::vec3 currentBonePosition = currentBone.position;
       std::string showedBoneName = boneMap[currentBonePMX.nameLocal];
       
       if (ImGui::TreeNode(showedBoneName.c_str()))
@@ -57,24 +58,20 @@ void PMXEditorGUI::draw()
         
         if ((isSliderXActive || isSliderYActive || isSliderZActive))
         {
-          // isRotating = true;
-          // command.execute();
           RotateBoneCommand command(model, (int)i, currentBoneRotation);
           command.execute();
         }
-        else
+
+        bool isPositionXActive = ImGui::SliderFloat("position-x", &currentBonePosition.x, -10.0f, 10.0f, "%.3f");
+        bool isPositionYActive = ImGui::SliderFloat("position-y", &currentBonePosition.y, -10.0f, 10.0f, "%.3f");
+        bool isPositionZActive = ImGui::SliderFloat("position-z", &currentBonePosition.z, -10.0f, 10.0f, "%.3f");
+
+        if ((isPositionXActive || isPositionYActive || isPositionZActive))
         {
-          // isRotating = false;
+          TranslateBoneCommand command(model, (int)i, currentBonePosition);
+          command.execute();
         }
-        
-        // bool isEqual = glm::all(glm::epsilonEqual(boneRotation, previousRotation, 1e-8f));
-        // if (!isEqual)
-        // {
-          // std::cout << "Finish Rotating" << std::endl;
-          // commandManager.executeCommand(
-          //   std::make_unique<RotateBoneCommand>(command)
-          // );
-        // }
+
         ImGui::TreePop();
       }
     }

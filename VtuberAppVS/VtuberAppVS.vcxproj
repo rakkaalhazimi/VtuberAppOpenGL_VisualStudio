@@ -533,6 +533,7 @@
     <ClInclude Include="src\commands\Command.h" />
     <ClInclude Include="src\commands\CommandManager.h" />
     <ClInclude Include="src\commands\RotateBoneCommand.h" />
+    <ClInclude Include="src\commands\TranslateBoneCommand.h" />
     <ClInclude Include="src\gui\PMXEditorGUI.h" />
     <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\PMXFile.h" />

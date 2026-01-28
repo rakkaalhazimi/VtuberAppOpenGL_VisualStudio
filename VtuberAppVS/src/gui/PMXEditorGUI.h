@@ -10,6 +10,7 @@
 
 #include "commands/CommandManager.h"
 #include "commands/RotateBoneCommand.h"
+#include "commands/TranslateBoneCommand.h"
 #include "PMXModel.h"
 
 class PMXEditorGUI
