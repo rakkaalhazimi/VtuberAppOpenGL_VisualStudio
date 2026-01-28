@@ -311,11 +311,6 @@ void PMXModel::Update()
     glm::vec3 effector = GetBoneWorldPosition(effectorIndex);
     glm::vec3 target = GetBoneWorldPosition(targetIndex);
 
-    if (targetIndex == 7)
-    {
-      //pmxBone.ikIteration = 10;
-    }
-
     // PROBLEM: with high iteration, the effector seems to back and forth between two specific values. 
     //          something might be wrong on how we update the joint.
     // Iteration: 1
@@ -331,9 +326,9 @@ void PMXModel::Update()
     // Target : : 0.844506 10.2131 - 1.20874
 
     // DISCOVERY: The CCD Algorithm below is work, something might be wrong with how we update the delta rotation
+    // DISCOVERY: Chat GPT said that I am using global axis to my local rotation, hence I need to make it local first
 
 
-    
     // CCD Algorithm
     for (size_t j = 0; j < pmxBone.ikIteration; j++)
     {
@@ -348,71 +343,37 @@ void PMXModel::Update()
       for (int k = 0; k < pmxBone.ikLinks.size(); k++)
       {
         effector = GetBoneWorldPosition(effectorIndex);
-        target = GetBoneWorldPosition(targetIndex);
+        //target = GetBoneWorldPosition(targetIndex);
         int jointIndex = pmxBone.ikLinks[k].ikBoneIndex;
         glm::vec3 joint = GetBoneWorldPosition(jointIndex);
         IK::axisAngle3D result = IK::solveAxisAngle3D(joint, effector, target);
 
         if (result.angle <= 1e-6 || glm::length(result.axis) <= 1e-6)
         {
-          //continue;
-          break;
+          continue;
         }
 
         result.angle = glm::clamp(result.angle, -pmxBone.ikLimitAngle, pmxBone.ikLimitAngle);
-        result.angle *= 0.1f;
 
-        if (effectorIndex == 87 && !hasPrint)
-        {
-          /*std::cout << "Iteration: " << j << std::endl;
-          std::cout << "Angle: " << result.angle << std::endl;
-          Utils::printVector(joint, "Joint: ");
-          Utils::printVector(result.axis, "Axis: ");
-          Utils::printVector(effector, "Effector: ");
-          Utils::printVector(target, "Target: ");*/
-          //std::cout << std::endl;
-        }
+        glm::quat globalRotation = glm::quat_cast(globalTransform[jointIndex]);
+        glm::quat deltaRotation = glm::angleAxis(result.angle, result.axis);
+        glm::quat chainRotation = glm::inverse(globalRotation) * deltaRotation * globalRotation;
+        bones[jointIndex].ikRotation *= chainRotation;
 
         // Rotate all children of Joint
-        glm::quat deltaRotation = glm::angleAxis(result.angle, result.axis);
-        bones[jointIndex].ikRotation *= deltaRotation;
-
-        //effector = IK::rotatePointAround3D(effector, joint, result.axis, result.angle);
-
+        for (int l = k - 1; l >= 0; --l)
+        {
+          int jointChildIndex = pmxBone.ikLinks[l].ikBoneIndex;
+          bones[jointChildIndex].ikRotation *= chainRotation;
+          UpdateLocalTransform(jointChildIndex);
+          UpdateGlobalTransform(jointChildIndex);
+          UpdateChildrenGlobalTransform(jointChildIndex);
+        }
         UpdateLocalTransform(jointIndex);
         UpdateGlobalTransform(jointIndex);
         UpdateChildrenGlobalTransform(jointIndex);
-        if (effectorIndex == 87 && !hasPrint)
-        {
-          /*effector = GetBoneWorldPosition(effectorIndex);
-          Utils::printVector(effector, "Effector After: ");
-          std::cout << std::endl;*/
         }
-        break;
 
-        for (int l = k - 1; l >= 0; --l)
-        {
-          //int jointChildIndex = pmxBone.ikLinks[l].ikBoneIndex;
-          //bones[jointChildIndex].ikRotation = deltaRotation;
-          //UpdateLocalTransform(jointChildIndex);
-          //UpdateGlobalTransform(jointChildIndex);
-        }
-      }
-      // (joint-84) == (joint-85) == (effector-86)
-      // Joint 85 rotate (moves effector)
-      // Joint 84 rotate (moves joint 85)
-      if (pmxBone.ikBoneIndex == 87)
-      {
-        //Utils::printVector(effector, "Effector");
-        //UpdateGlobalTransform(86);
-        //UpdateChildrenGlobalTransform(86);
-      }
-
-
-      if (j == 20)
-      {
-        hasPrint = true;
-      }
     }
     // End CCD Algorithm
     }
