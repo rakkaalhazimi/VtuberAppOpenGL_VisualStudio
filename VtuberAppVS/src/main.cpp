@@ -297,7 +297,8 @@ int main(int argc, char* argv[]) {
 	feixiaoModel.bones[target].rotation.z = eulerAngles.z;
 
 	// Move whole model
-	feixiaoModel.bones[3].position.x = 2.0f;
+	// (don't move the index 3 since it is the same depth for IK)
+	feixiaoModel.bones[1].position.x = 2.0f;
 
 
 	// Morph test
