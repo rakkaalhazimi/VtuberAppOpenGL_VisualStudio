@@ -24,6 +24,7 @@ PMXModel::PMXModel(PMXFile &pmxFile)
         glm::vec3(0.0f),                                            // addTranslation
         glm::quat(1, 0, 0, 0),                                      // addRotation
         glm::quat(1, 0, 0, 0),                                      // ikRotation
+        glm::vec3(0.0f),                                            // ikPrevAngle
         hasAddTranslation,
         hasAddRotation,
       }
