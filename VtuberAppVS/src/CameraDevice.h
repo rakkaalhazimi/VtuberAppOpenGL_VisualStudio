@@ -1,13 +1,13 @@
 #pragma once
 
-#include<thread>
-#include<mutex>
+#include <thread>
+#include <mutex>
 
-#include<glad/glad.h>
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-#include<opencv2/opencv.hpp>
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "shader.h"
 

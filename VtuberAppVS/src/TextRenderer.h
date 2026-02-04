@@ -2,15 +2,15 @@
 #define TEXT_RENDERER_H_CLASS
 
 
-#include<map>
-#include<iostream>
+#include <map>
+#include <iostream>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include<glad/glad.h>
+#include <glad/glad.h>
 #include "glm/glm.hpp"
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "shader.h"
 

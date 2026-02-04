@@ -8,11 +8,13 @@ https://github.com/geaxgx/openvino_blazepose/tree/main
 #pragma once
 
 
-#include<algorithm>
-#include<cmath>
-#include<cstring>
-#include<iostream>
-#include<memory>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <thread>
 
 #include "onnxruntime_cxx_api.h"
 #include "opencv2/opencv.hpp"

@@ -1,27 +1,27 @@
-#include<filesystem>
-#include<iomanip>
-#include<iostream>
-#include<fstream>
-#include<unordered_map>
-#include<set>
-#include<sstream>
+﻿#include <filesystem>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
+#include <set>
+#include <sstream>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
-#include<glad/glad.h>
-#include<glfw/glfw3.h>
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
+#include <glad/glad.h>
+#include <glfw/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include<imgui/imgui.h>
 #include<imgui/imgui_impl_glfw.h>
 #include<imgui/imgui_impl_opengl3.h>
 
 #include "onnxruntime_cxx_api.h"
-#include<opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "Camera.h"
 #include "CameraDevice.h"
@@ -79,12 +79,13 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	std::string modelFilepath = argv[1];
+	std::string vmdFilepath = argv[2];
 	std::cout << "Model filepath: " << modelFilepath << std::endl;
 
 	// Enable windows to print kanji
-#ifdef _WIN32
-	SetConsoleOutputCP(CP_UTF8);
-#endif
+	#ifdef _WIN32
+		SetConsoleOutputCP(CP_UTF8);
+	#endif
 
 	
 	// Initialize GLFW

@@ -1,10 +1,10 @@
 #ifndef PMX_MODEL_H_HEADER_CLASS
 #define PMX_MODEL_H_HEADER_CLASS
 
-#include<algorithm>
-#include<set>
-#include<unordered_map>
-#include<unordered_set>
+#include <algorithm>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>

@@ -12,7 +12,7 @@
 #include <vector>
 #include <windows.h>
 
-#include<glm/glm.hpp>
+#include <glm/glm.hpp>
 
 
 

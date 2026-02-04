@@ -2,16 +2,16 @@
 #define TEXTURE_CLASS_H
 
 
-#include<codecvt>
-#include<filesystem>
-#include<locale>
-#include<vector>
+#include <codecvt>
+#include <filesystem>
+#include <locale>
+#include <vector>
 #ifdef _WIN32
   #include <windows.h>
 #endif
 
-#include<glad/glad.h>
-#include<stb/stb_image.h>
+#include <glad/glad.h>
+#include <stb/stb_image.h>
 
 #include "shader.h"
 
