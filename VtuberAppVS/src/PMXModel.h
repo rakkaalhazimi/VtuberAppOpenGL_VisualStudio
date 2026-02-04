@@ -43,6 +43,7 @@ struct BoneModel
   glm::vec3 addTranslation;
   glm::quat addRotation;
   glm::quat ikRotation;
+  glm::vec3 ikPrevAngle;
 
   bool hasAddTranslation;
   bool hasAddRotation;
