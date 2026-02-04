@@ -35,11 +35,16 @@ public:
 	float speed = 50.0f;
 	float sensitivity = 100.0f;
 
+	float FOVdeg = 45.0f;
+	float nearPlane = 0.1f;
+	float farPlane = 100.0f;
+
 	// Camera constructor to set up initial values
 	Camera(int width, int height, glm::vec3 position);
 
 	// Updates the camera matrix to the Vertex Shader
-	void updateMatrix(float FOVdeg, float nearPlane, float farPlane, Shader& shader, const char* uniform);
+	void setMatrixParameter(float FOVdeg, float nearPlane, float farPlane);
+	void updateShaderMatrix(Shader& shader, const char* uniform);
 	// Exports the camera matrix to a shader
 	void Matrix(Shader& shader, const char* uniform);
 	// Handles camera inputs

@@ -8,7 +8,14 @@ Camera::Camera(int width, int height, glm::vec3 position)
 	Position = position;
 }
 
-void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane, Shader& shader, const char* uniform)
+void Camera::setMatrixParameter(float FOVdeg, float nearPlane, float farPlane)
+{
+	Camera::FOVdeg = FOVdeg;
+	Camera::nearPlane = nearPlane;
+	Camera::farPlane = farPlane;
+}
+
+void Camera::updateShaderMatrix(Shader& shader, const char* uniform)
 {
 	// Move the entire world so the camera is at the origin
 	view = glm::lookAt(Position, Position + Orientation, Up);

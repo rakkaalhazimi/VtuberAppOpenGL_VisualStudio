@@ -173,6 +173,11 @@ int main(int argc, char* argv[]) {
 
 	// Camera
 	Camera camera(width, height, glm::vec3(0.0f, 20.0f, -15.0f));
+	camera.setMatrixParameter(
+		45.0f, // FOV
+		0.1f,  // Near Plane
+		100.0f // Far Plane
+	);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -435,7 +440,7 @@ int main(int argc, char* argv[]) {
 
 		// Camera
 		camera.Inputs(window);
-		camera.updateMatrix(45.0f, 0.1f, 100.0f, shader, "camMatrix");
+		camera.updateShaderMatrix(shader, "camMatrix");
 
 		shader.Activate();
 		selector.Watch(window, rayCaster, meshes);
@@ -444,13 +449,13 @@ int main(int argc, char* argv[]) {
 
 		pmxShader.Activate();
 
-		camera.updateMatrix(45.0f, 0.1f, 100.0f, pmxShader, "camMatrix");
+		camera.updateShaderMatrix(pmxShader, "camMatrix");
 		feixiaoModel.Update();
 		feixiaoModel.Draw(pmxShader);
 
 		// Ray Casting
 		rayShader.Activate();
-		camera.updateMatrix(45.0f, 0.1f, 100.0f, rayShader, "camMatrix");
+		camera.updateShaderMatrix(rayShader, "camMatrix");
 		rayCaster.Activate(window, rayShader, camera);
 		rayCaster.DrawLine();
 		const bool hit = rayCaster.Intersect(shader, mesh);
