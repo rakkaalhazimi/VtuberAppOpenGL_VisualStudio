@@ -21,9 +21,9 @@
 左足 LeftLeg
 左ひざ LeftKnee
 左足首 LeftAnkle
-右足 RightLeg
-右ひざ RightKnee
-右足首 RightAnkle
+右足 RightLeg(index-84)
+右ひざ RightKnee(index-85)
+右足首 RightAnkle(index-86)
 左つま先 LeftToe
 右つま先 RightToe
 左腕IK LeftArmIK
@@ -64,3 +64,12 @@
 右小指1 RightPinky1
 右小指2 RightPinky2
 右小指3 RightPinky3
+左足IK親 IKTest
+左足ＩＫ LeftFootIK
+左つま先ＩＫ LeftToeIK
+右足ＩＫ RightFootIK(index6)
+左足ＩＫ LeftFootIK(index9)
+右つま先ＩＫ RightToeIK
+左足D LeftFootD
+腰キャンセル右 BoneWaistCancel(index83)
+右つま先ＩＫ RightToeIK(index7)
