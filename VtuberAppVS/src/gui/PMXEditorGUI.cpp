@@ -76,13 +76,33 @@ void PMXEditorGUI::draw()
       }
     }
     
-    
-    
-    
   }
   
   if (ImGui::CollapsingHeader("Morphs"))
   {
+    int id = 0;
+
+    for (auto &item : model.morphs)
+    {
+      switch (item.morphType)
+      {
+        case (MorphType::VERTEX):
+          ImGui::PushID(id);
+          float currentWeight = model.morphWeights[item.nameLocal.c_str()];
+          bool isSliderActive = ImGui::SliderFloat(item.nameLocal.c_str(), &currentWeight, 0.0f, 1.0f, "%.2f");
+          if (isSliderActive)
+          {
+            model.UpdateMorph(item.nameLocal.c_str(), currentWeight);
+            model.morphWeights[item.nameLocal.c_str()] = currentWeight;
+          }
+          ImGui::PopID();
+          id++;
+          break;
+
+      }
+
+    }
+
     // ImGui::SliderFloat("slider float", &morphWeight, 0.0f, 1.0f, "ratio = %.3f");
   }
   

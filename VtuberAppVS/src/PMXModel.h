@@ -63,6 +63,7 @@ class PMXModel
     std::vector<PMXBone> bonesPmx;
     std::vector<PMXMorph> morphs;
     
+    std::unordered_map<const char*, float> morphWeights;
     std::unordered_map<int, std::vector<int>> boneChildren;
     
     std::vector<glm::mat4> boneMatrices;
@@ -79,7 +80,7 @@ class PMXModel
     
     PMXModel(PMXFile &pmxFile);
     void GetBoneSubtree(int index, std::vector<int> &out);
-    void UpdateMorph(float &weight);
+    void UpdateMorph(const char* name, float &weight);
     void UpdateIKTransform(int index);
     void UpdateLocalTransform(int index);
     void UpdateAdditionalTransform(int index);

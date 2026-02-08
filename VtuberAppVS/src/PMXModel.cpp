@@ -128,6 +128,11 @@ PMXModel::PMXModel(PMXFile &pmxFile)
   
   // Morphs
   morphs = pmxFile.morphs;
+  for (auto& item : morphs)
+  {
+    morphWeights[item.nameLocal.c_str()] = 0.0f;
+    //std::cout << "Morph name: " << item.nameLocal << std::endl;
+  }
   
   // OpenGL Array Buffer
   glGenVertexArrays(1, &VAO);
@@ -183,7 +188,7 @@ void PMXModel::GetBoneSubtree(int index, std::vector<int>& out)
 }
 
 
-void PMXModel::UpdateMorph(float &weight)
+void PMXModel::UpdateMorph(const char *name, float &weight)
 {
   // Wink right: ウィンク右
   // Wink left: ウィンク左
@@ -192,16 +197,25 @@ void PMXModel::UpdateMorph(float &weight)
   // float weight = 0.8;
   for (PMXMorph item: morphs)
   {
-    if (item.nameLocal.find("ウィンク右") != std::string::npos)
+    
+    switch (item.morphType)
     {
-      // std::cout << "Morph name: " << item.nameLocal << std::endl;
-      for (PMXMorph::VertexMorph vMorph: item.vertexMorph)
+      case MorphType::VERTEX:
+        if (item.nameLocal.find(name) != std::string::npos)
+    {
+          for (PMXMorph::VertexMorph vMorph : item.vertexMorph)
       {
         vertices[vMorph.vertexIndex].position =
           baseVertices[vMorph.vertexIndex].position + vMorph.positionOffset * weight;
       }
     }
+        break;
+
+      default:
+        break;
+       
   }
+}
 }
 
 

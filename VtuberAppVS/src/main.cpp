@@ -398,7 +398,7 @@ int main(int argc, char* argv[]) {
 
 		if (morphWeight > 0.0f)
 		{
-			feixiaoModel.UpdateMorph(morphWeight);
+			//feixiaoModel.UpdateMorph(morphWeight);
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
