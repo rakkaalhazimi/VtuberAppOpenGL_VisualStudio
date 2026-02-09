@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # IMGUI
 imgui.ini
 /VtuberAppVS/imgui.ini
+/vcpkg_installed
