@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <bullet/btBulletCollisionCommon.h>
+#include <bullet/btBulletDynamicsCommon.h>
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -62,6 +64,7 @@ class PMXModel
     std::vector<BoneModel> bones;
     std::vector<PMXBone> bonesPmx;
     std::vector<PMXMorph> morphs;
+    std::vector<PMXRigidBody> rigidBody;
     
     std::unordered_map<const char*, float> morphWeights;
     std::unordered_map<int, std::vector<int>> boneChildren;
@@ -75,12 +78,12 @@ class PMXModel
     std::vector<glm::mat4> globalTransform;
     std::vector<glm::mat4> localTransform;
     
-    std::vector<BoneNode> boneTree;
     bool hasPrint = false;
     
     PMXModel(PMXFile &pmxFile);
     void GetBoneSubtree(int index, std::vector<int> &out);
     void UpdateMorph(const char* name, float &weight);
+    void UpdatePhysics();
     void UpdateIKTransform(int index);
     void UpdateLocalTransform(int index);
     void UpdateAdditionalTransform(int index);

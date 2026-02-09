@@ -1,0 +1,8 @@
+{
+  "name": "my-project",
+  "version-date": "2026-02-08",
+  "builtin-baseline": "aa2d37682e3318d93aef87efa7b0e88e81cd3d59",
+  "dependencies": [
+    "bullet3"
+  ]
+}

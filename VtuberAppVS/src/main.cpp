@@ -337,7 +337,7 @@ int main(int argc, char* argv[]) {
 	glm::vec3 effectorTest = glm::vec3(0.741878f, -0.651976f, 1.40664f);
 	glm::vec3 targetTest = glm::vec3(0.844506f, 10.2131f, -1.20874f);
 
-	IK::solve3DJointCCD(jointTest, effectorTest, targetTest, 20);
+	//IK::solve3DJointCCD(jointTest, effectorTest, targetTest, 20);
 
 	// Pose Estimation
 	//Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "PoseEstimation");

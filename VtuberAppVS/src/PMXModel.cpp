@@ -44,23 +44,23 @@ PMXModel::PMXModel(PMXFile &pmxFile)
       }
       else
       {
-        std::cout << "Current Bone index: " << i << std::endl;
+        //std::cout << "Current Bone index: " << i << std::endl;
       ////std::cout << "Current Bone Flag: " << currentBone.boneFlag << std::endl;
       //std::cout << "Additional Parent Index: " << currentBone.additionalParentIndex << std::endl;
       //std::cout << "Additional Rate: " << currentBone.additionalRate << std::endl;
       //std::cout << "Parent Index: " << currentBone.parentBoneIndex << std::endl;
       //std::cout << "Has add rotate: " << bones[i].hasAddRotation << std::endl;
       //std::cout << "Has add translate: " << bones[i].hasAddTranslation << std::endl;
-        std::cout << "Bone position: " << currentBone.position.x << " " << currentBone.position.y << " " << currentBone.position.z << std::endl;
-        std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
-        std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
-        std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
+        //std::cout << "Bone position: " << currentBone.position.x << " " << currentBone.position.y << " " << currentBone.position.z << std::endl;
+        //std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
+        //std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
+        //std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
         for (size_t j = 0; j < currentBone.ikLinkCount; j++)
         {
           auto currentLink = currentBone.ikLinks[j];
-          std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
+          //std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
       }
     }
 
@@ -133,6 +133,9 @@ PMXModel::PMXModel(PMXFile &pmxFile)
     morphWeights[item.nameLocal.c_str()] = 0.0f;
     //std::cout << "Morph name: " << item.nameLocal << std::endl;
   }
+  
+  // Rigid Body
+  rigidBody = pmxFile.rigidBodies;
   
   // OpenGL Array Buffer
   glGenVertexArrays(1, &VAO);
@@ -216,6 +219,143 @@ void PMXModel::UpdateMorph(const char *name, float &weight)
        
   }
 }
+}
+
+
+void PMXModel::UpdatePhysics()
+{
+
+  // World
+  btBroadphaseInterface* broadphase = new btDbvtBroadphase();
+
+  btDefaultCollisionConfiguration* config =
+    new btDefaultCollisionConfiguration();
+
+  btCollisionDispatcher* dispatcher =
+    new btCollisionDispatcher(config);
+
+  btSequentialImpulseConstraintSolver* solver =
+    new btSequentialImpulseConstraintSolver();
+
+  btDiscreteDynamicsWorld* world =
+    new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, config);
+
+
+  for (auto &item : rigidBody)
+  {
+    if (item.nameLocal.find("耳") == std::string::npos)
+    {
+      continue;
+      //std::cout << "Found ears" << std::endl;
+    }
+
+    std::cout << "Bone Index ears: " << item.relatedBoneIndex << std::endl;
+
+    // Shape
+    btCollisionShape* shape{};
+
+    switch (item.shapeType)
+    {
+    case PMXRigidBody::ShapeType::SPHERE:
+      shape = new btSphereShape(item.shapeSize.x);
+      std::cout << "SPHERE" << std::endl;
+      break;
+    case PMXRigidBody::ShapeType::BOX:
+      std::cout << "BOX" << std::endl;
+      shape = new btBoxShape(
+        btVector3(item.shapeSize.x, item.shapeSize.y, item.shapeSize.z));
+      break;
+    case PMXRigidBody::ShapeType::CAPSULE:
+      std::cout << "CAPSULE" << std::endl;
+      shape = new btCapsuleShape(item.shapeSize.x, item.shapeSize.y);
+      break;
+    default:
+      continue;
+      break;
+    }
+
+    // Collider
+    btTransform colliderOffset;
+    colliderOffset.setIdentity();
+    colliderOffset.setOrigin(
+      btVector3(
+        item.colliderPosition.x, 
+        item.colliderPosition.y, 
+        item.colliderPosition.z)
+    );
+
+    btQuaternion q;
+    q.setEulerZYX(
+      item.colliderRotation.z,
+      item.colliderRotation.y,
+      item.colliderRotation.x
+    );
+    colliderOffset.setRotation(q);
+
+    // Mass
+    btScalar mass = 0.0f;
+    btVector3 inertia(0, 0, 0);
+
+    if (item.operationType != PMXRigidBody::OperationType::STATIC)
+    {
+      mass = item.weight;
+    }
+    if (mass > 0.0f) {
+      shape->calculateLocalInertia(mass, inertia);
+    }
+
+    // Motion for interpolation
+    btDefaultMotionState* motion =
+      new btDefaultMotionState(btTransform::getIdentity());
+
+
+    btRigidBody::btRigidBodyConstructionInfo info(
+      mass,
+      motion,
+      shape,
+      inertia
+    );
+    info.m_linearDamping = item.positionAttenuation;
+    info.m_angularDamping = item.rotationAttenuation;
+    info.m_restitution = item.recoil;
+    info.m_friction = item.friction;
+    info.m_additionalDamping = true;
+
+    
+
+    switch (item.operationType)
+    {
+    case PMXRigidBody::OperationType::STATIC:
+      break;
+    case PMXRigidBody::OperationType::DYNAMIC:
+      break;
+    case PMXRigidBody::OperationType::DYNAMIC_POSITION_ADJUST:
+      break;
+    }
+
+    // Rigid Body
+    btRigidBody* body = new btRigidBody(info);
+
+    // Prevent the rigid body from going to sleep.
+    body->setActivationState(DISABLE_DEACTIVATION);
+
+    // Enable Kinematic Behaviors:
+    // - Doesn't affected by physics.
+    // - Solid obstacle to dynamic object.
+    // - Moved by our script/code.
+    if (item.operationType == PMXRigidBody::OperationType::STATIC) {
+      body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+    }
+
+    int collisionGroup = 1 << item.groupIndex;
+    // Tilde operator (~)
+    // from: 00100010
+    // to:   11011101
+    // Invert to define what it DOES hit
+    int collisionMask = ~item.ignoreCollisionGroup;
+
+    world->addRigidBody(body, collisionGroup, collisionMask);
+  }
 }
 
 
