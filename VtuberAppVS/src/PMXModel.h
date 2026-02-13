@@ -64,11 +64,18 @@ class PMXModel
     std::vector<BoneModel> bones;
     std::vector<PMXBone> bonesPmx;
     std::vector<PMXMorph> morphs;
-    std::vector<PMXRigidBody> rigidBody;
+    std::vector<RigidBodyModel> rigidBody;
+    std::vector<PMXRigidBody> rigidBodyPmx;
     
     std::unordered_map<const char*, float> morphWeights;
     std::unordered_map<int, std::vector<int>> boneChildren;
     
+    btBroadphaseInterface* physBroadphase = nullptr;
+    btDefaultCollisionConfiguration* physConfig = nullptr;
+    btCollisionDispatcher* physDispatcher = nullptr;
+    btSequentialImpulseConstraintSolver* physSolver = nullptr;
+    btDiscreteDynamicsWorld* physWorld = nullptr;
+
     std::vector<glm::mat4> boneMatrices;
 
     std::set<int32_t> addParentIndexList;
@@ -81,7 +88,13 @@ class PMXModel
     bool hasPrint = false;
     
     PMXModel(PMXFile &pmxFile);
+    void InitPhysics();
     void GetBoneSubtree(int index, std::vector<int> &out);
+    glm::vec3 GetBoneWorldPosition(int index, bool isLog = false);
+    glm::vec3 GetBoneWorldDist(int indexA, int indexB, bool isLog = false);
+    glm::quat GetParentBoneWorldRot(int index, bool isLog = false);
+    float GetIKChainLength(int targetIndex);
+    float GetIKRelativeChainLength(int targetIndex);
     void UpdateMorph(const char* name, float &weight);
     void UpdatePhysics();
     void UpdateIKTransform(int index);
@@ -91,11 +104,6 @@ class PMXModel
     void UpdateGlobalTransform(int index);
     void Update();
     void Draw(Shader& shader);
-    glm::vec3 GetBoneWorldPosition(int index, bool isLog = false);
-    glm::vec3 GetBoneWorldDist(int indexA, int indexB, bool isLog = false);
-    glm::quat GetParentBoneWorldRot(int index, bool isLog = false);
-    float GetIKChainLength(int targetIndex);
-    float GetIKRelativeChainLength(int targetIndex);
     
   private:
     

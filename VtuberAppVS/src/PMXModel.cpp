@@ -135,7 +135,19 @@ PMXModel::PMXModel(PMXFile &pmxFile)
   }
   
   // Rigid Body
-  rigidBody = pmxFile.rigidBodies;
+  rigidBodyPmx = pmxFile.rigidBodies;
+  
+  // Physics
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    UpdateLocalTransform(i);
+  }
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    UpdateAdditionalTransform(i);
+    UpdateGlobalTransform(i);
+  }
+  InitPhysics();
   
   // OpenGL Array Buffer
   glGenVertexArrays(1, &VAO);
@@ -176,8 +188,7 @@ PMXModel::PMXModel(PMXFile &pmxFile)
 }
 
 
-// Get children and grandchildren of the bone
-void PMXModel::GetBoneSubtree(int index, std::vector<int>& out)
+void PMXModel::InitPhysics()
 {
   if (boneChildren.find(index) != boneChildren.end())
   {
@@ -226,22 +237,15 @@ void PMXModel::UpdatePhysics()
 {
 
   // World
-  btBroadphaseInterface* broadphase = new btDbvtBroadphase();
+  physBroadphase = new btDbvtBroadphase();
+  physConfig = new btDefaultCollisionConfiguration();
+  physDispatcher = new btCollisionDispatcher(physConfig);
+  physSolver = new btSequentialImpulseConstraintSolver();
+  physWorld = new btDiscreteDynamicsWorld(physDispatcher, physBroadphase, physSolver, physConfig);
 
-  btDefaultCollisionConfiguration* config =
-    new btDefaultCollisionConfiguration();
+  physWorld->setGravity(btVector3(0, 0, 0));
 
-  btCollisionDispatcher* dispatcher =
-    new btCollisionDispatcher(config);
-
-  btSequentialImpulseConstraintSolver* solver =
-    new btSequentialImpulseConstraintSolver();
-
-  btDiscreteDynamicsWorld* world =
-    new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, config);
-
-
-  for (auto &item : rigidBody)
+  for (auto& item : rigidBodyPmx)
   {
     if (item.nameLocal.find("耳") == std::string::npos)
     {
@@ -250,6 +254,14 @@ void PMXModel::UpdatePhysics()
     }
 
     std::cout << "Bone Index ears: " << item.relatedBoneIndex << std::endl;
+    if (item.operationType == PMXRigidBody::OperationType::STATIC)
+    {
+      std::cout << "Bone Operation type: " << "static" << std::endl;
+    }
+    else
+    {
+      std::cout << "Bone Operation type: " << "dynamic" << std::endl;
+    }
 
     // Shape
     btCollisionShape* shape{};
@@ -258,15 +270,15 @@ void PMXModel::UpdatePhysics()
     {
     case PMXRigidBody::ShapeType::SPHERE:
       shape = new btSphereShape(item.shapeSize.x);
-      std::cout << "SPHERE" << std::endl;
+      //std::cout << "SPHERE" << std::endl;
       break;
     case PMXRigidBody::ShapeType::BOX:
-      std::cout << "BOX" << std::endl;
+      //std::cout << "BOX" << std::endl;
       shape = new btBoxShape(
         btVector3(item.shapeSize.x, item.shapeSize.y, item.shapeSize.z));
       break;
     case PMXRigidBody::ShapeType::CAPSULE:
-      std::cout << "CAPSULE" << std::endl;
+      //std::cout << "CAPSULE" << std::endl;
       shape = new btCapsuleShape(item.shapeSize.x, item.shapeSize.y);
       break;
     default:
@@ -292,22 +304,35 @@ void PMXModel::UpdatePhysics()
     );
     colliderOffset.setRotation(q);
 
+    Utils::printVector(item.colliderPosition, "Collider: ");
+
+    btTransform boneGlobalTransform;
+    boneGlobalTransform.setFromOpenGLMatrix(
+      glm::value_ptr(globalTransform[item.relatedBoneIndex])
+    );
+    colliderOffset = boneGlobalTransform.inverse() * colliderOffset;
+
     // Mass
     btScalar mass = 0.0f;
     btVector3 inertia(0, 0, 0);
+
+    // Temporarily change to static operation type
+    //item.operationType = PMXRigidBody::OperationType::STATIC;
 
     if (item.operationType != PMXRigidBody::OperationType::STATIC)
     {
       mass = item.weight;
     }
-    if (mass > 0.0f) {
+    if (mass > 0.0f) 
+    {
       shape->calculateLocalInertia(mass, inertia);
     }
+    std::cout << "Mass: " << mass << std::endl;
 
     // Motion for interpolation
     btDefaultMotionState* motion =
-      new btDefaultMotionState(btTransform::getIdentity());
-
+      //new btDefaultMotionState(btTransform::getIdentity());
+      new btDefaultMotionState(colliderOffset);
 
     btRigidBody::btRigidBodyConstructionInfo info(
       mass,
@@ -354,7 +379,145 @@ void PMXModel::UpdatePhysics()
     // Invert to define what it DOES hit
     int collisionMask = ~item.ignoreCollisionGroup;
 
-    world->addRigidBody(body, collisionGroup, collisionMask);
+    physWorld->addRigidBody(body, collisionGroup, collisionMask);
+
+    rigidBody.push_back(
+      RigidBodyModel 
+      {
+        colliderOffset,
+        shape,
+        body,
+        item.operationType,
+        item.relatedBoneIndex,
+      }
+    );
+
+  }
+
+  std::cout << "Rigid body PMX: " << rigidBody.size() << std::endl;
+}
+
+
+// Get children and grandchildren of the bone
+void PMXModel::GetBoneSubtree(int index, std::vector<int>& out)
+{
+  if (boneChildren.find(index) != boneChildren.end())
+  {
+    for (int childIndex : boneChildren[index])
+    {
+      //std::cout << "Child Index: " << childIndex << std::endl;
+      out.push_back(childIndex);
+      GetBoneSubtree(childIndex, out);
+    }
+  }
+}
+
+
+void PMXModel::UpdateMorph(const char *name, float &weight)
+{
+  // Wink right: ウィンク右
+  // Wink left: ウィンク左
+  // Wink: ウィンク
+  // Wink: ウィンク２
+  // float weight = 0.8;
+  for (PMXMorph item: morphs)
+  {
+    
+    switch (item.morphType)
+    {
+      case MorphType::VERTEX:
+        if (item.nameLocal.find(name) != std::string::npos)
+        {
+          for (PMXMorph::VertexMorph vMorph : item.vertexMorph)
+          {
+            vertices[vMorph.vertexIndex].position =
+              baseVertices[vMorph.vertexIndex].position + vMorph.positionOffset * weight;
+          }
+        }
+        break;
+
+      default:
+        break;
+       
+    }
+  }
+}
+
+
+void PMXModel::UpdatePhysics()
+{
+  if (physWorld == nullptr)
+  {
+    return;
+  }
+
+  physWorld->stepSimulation(1.0f / 60.0f);
+
+  for (const auto& item : rigidBody) 
+  {
+    if (item.operationType == PMXRigidBody::OperationType::STATIC)
+    {
+      btTransform boneWorldTrans;
+      boneWorldTrans.setFromOpenGLMatrix(
+        glm::value_ptr(globalTransform[item.relatedBoneIndex])
+      );
+      btTransform physicsWorldTrans = boneWorldTrans * item.colliderOffset;
+      item.body->getMotionState()->setWorldTransform(physicsWorldTrans);
+    }
+  }
+
+  //for (const auto& item : rigidBody)
+  //{
+  //  // For each Dynamic rigid body:
+  //  btTransform boneWorldTrans;
+  //  boneWorldTrans.setFromOpenGLMatrix(glm::value_ptr(globalTransform[item.relatedBoneIndex]));
+  //  btTransform targetWorldTrans = boneWorldTrans * item.colliderOffset;
+
+  //  btVector3 targetPos = targetWorldTrans.getOrigin();
+  //  btVector3 currentPos = item.body->getWorldTransform().getOrigin();
+
+  //  // Calculate a simple spring force: Force = stiffness * (target - current)
+  //  btVector3 force = (targetPos - currentPos) * 100.0f;
+  //  item.body->applyCentralForce(force);
+
+  //  // Add some air resistance so it doesn't vibrate forever
+  //  item.body->setLinearVelocity(item.body->getLinearVelocity() * 0.95f);
+  //}
+
+  // Global Transform after physics
+  for (const auto& item : rigidBody)
+  {
+    if (item.operationType != PMXRigidBody::OperationType::STATIC)
+    {
+      btTransform physicsWorldTrans;
+      item.body->getMotionState()->getWorldTransform(physicsWorldTrans);
+
+      // Reverse the offset to find where the BONE should be
+      btTransform boneWorldTrans = physicsWorldTrans * item.colliderOffset.inverse();
+
+      // Update your PMX Bone with this new matrix for rendering
+      btScalar matrixArray[16];
+      boneWorldTrans.getOpenGLMatrix(matrixArray);
+      globalTransform[item.relatedBoneIndex] = glm::make_mat4(matrixArray);
+
+      UpdateChildrenGlobalTransform(item.relatedBoneIndex);
+    }
+  }
+
+  // Physics live in global world, change it to local world
+  for (const auto& item : rigidBody)
+  {
+    BoneModel bone = bones[item.relatedBoneIndex];
+    if (bone.parentBoneIndex > 0)
+    {
+      localTransform[item.relatedBoneIndex] = 
+        glm::inverse(globalTransform[bone.parentBoneIndex]) *
+        globalTransform[item.relatedBoneIndex];
+    }
+    else
+    {
+      localTransform[item.relatedBoneIndex] = globalTransform[item.relatedBoneIndex];
+    }
   }
 }
 
@@ -534,8 +697,9 @@ void PMXModel::Update()
     }
   // End IK Transform
 
-  // Bone 84, 85, 86 are moved by additional transform
-  // NOTE: to update single bone, you need to update all of its children
+  // Test Physics
+  UpdatePhysics();
+
   // Global Transform (for Rendering)
   for (size_t i = 0; i < bones.size(); i++)
   {

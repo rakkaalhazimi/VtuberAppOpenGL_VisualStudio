@@ -304,7 +304,7 @@ int main(int argc, char* argv[]) {
 
 	// Move whole model
 	// (don't move the index 3 since it is the same depth for IK)
-	feixiaoModel.bones[1].position.x = 2.0f;
+	//feixiaoModel.bones[1].position.x = 2.0f;
 
 
 	// Morph test
@@ -312,6 +312,12 @@ int main(int argc, char* argv[]) {
 	float morphWeight = 0.0f;
 	glm::vec3 boneRotation(0.0f);
 	RotateBoneCommand command(feixiaoModel, 16, boneRotation);
+
+	
+	// Physics test
+	feixiaoModel.UpdatePhysics();
+
+
 	CommandManager commandManager;
 
 	// GUI test
