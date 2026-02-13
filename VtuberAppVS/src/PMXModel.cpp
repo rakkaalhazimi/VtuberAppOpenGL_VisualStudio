@@ -190,52 +190,6 @@ PMXModel::PMXModel(PMXFile &pmxFile)
 
 void PMXModel::InitPhysics()
 {
-  if (boneChildren.find(index) != boneChildren.end())
-  {
-    for (int childIndex : boneChildren[index])
-    {
-      //std::cout << "Child Index: " << childIndex << std::endl;
-      out.push_back(childIndex);
-      GetBoneSubtree(childIndex, out);
-    }
-  }
-}
-
-
-void PMXModel::UpdateMorph(const char *name, float &weight)
-{
-  // Wink right: ウィンク右
-  // Wink left: ウィンク左
-  // Wink: ウィンク
-  // Wink: ウィンク２
-  // float weight = 0.8;
-  for (PMXMorph item: morphs)
-  {
-    
-    switch (item.morphType)
-    {
-      case MorphType::VERTEX:
-        if (item.nameLocal.find(name) != std::string::npos)
-    {
-          for (PMXMorph::VertexMorph vMorph : item.vertexMorph)
-      {
-        vertices[vMorph.vertexIndex].position =
-          baseVertices[vMorph.vertexIndex].position + vMorph.positionOffset * weight;
-      }
-    }
-        break;
-
-      default:
-        break;
-       
-  }
-}
-}
-
-
-void PMXModel::UpdatePhysics()
-{
-
   // World
   physBroadphase = new btDbvtBroadphase();
   physConfig = new btDefaultCollisionConfiguration();
@@ -345,18 +299,6 @@ void PMXModel::UpdatePhysics()
     info.m_restitution = item.recoil;
     info.m_friction = item.friction;
     info.m_additionalDamping = true;
-
-    
-
-    switch (item.operationType)
-    {
-    case PMXRigidBody::OperationType::STATIC:
-      break;
-    case PMXRigidBody::OperationType::DYNAMIC:
-      break;
-    case PMXRigidBody::OperationType::DYNAMIC_POSITION_ADJUST:
-      break;
-    }
 
     // Rigid Body
     btRigidBody* body = new btRigidBody(info);
