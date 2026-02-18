@@ -45,19 +45,19 @@ PMXModel::PMXModel(PMXFile &pmxFile)
       else
       {
         //std::cout << "Current Bone index: " << i << std::endl;
-      ////std::cout << "Current Bone Flag: " << currentBone.boneFlag << std::endl;
-      //std::cout << "Additional Parent Index: " << currentBone.additionalParentIndex << std::endl;
-      //std::cout << "Additional Rate: " << currentBone.additionalRate << std::endl;
-      //std::cout << "Parent Index: " << currentBone.parentBoneIndex << std::endl;
-      //std::cout << "Has add rotate: " << bones[i].hasAddRotation << std::endl;
-      //std::cout << "Has add translate: " << bones[i].hasAddTranslation << std::endl;
+        ////std::cout << "Current Bone Flag: " << currentBone.boneFlag << std::endl;
+        //std::cout << "Additional Parent Index: " << currentBone.additionalParentIndex << std::endl;
+        //std::cout << "Additional Rate: " << currentBone.additionalRate << std::endl;
+        //std::cout << "Parent Index: " << currentBone.parentBoneIndex << std::endl;
+        //std::cout << "Has add rotate: " << bones[i].hasAddRotation << std::endl;
+        //std::cout << "Has add translate: " << bones[i].hasAddTranslation << std::endl;
         //std::cout << "Bone position: " << currentBone.position.x << " " << currentBone.position.y << " " << currentBone.position.z << std::endl;
         //std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
         //std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
         //std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
         for (size_t j = 0; j < currentBone.ikLinkCount; j++)
         {
-          auto currentLink = currentBone.ikLinks[j];
+          auto &currentLink = currentBone.ikLinks[j];
           //std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
         }
         //std::cout << std::endl;
@@ -67,7 +67,7 @@ PMXModel::PMXModel(PMXFile &pmxFile)
     // Add pmx original bones
     bonesPmx.push_back(pmxFile.bones[i]);
   }
-  
+
   boneMatrices = std::vector<glm::mat4>(pmxFile.bones.size(), glm::mat4(1.0f));
   localTransform = boneMatrices;
   globalTransform = boneMatrices;
@@ -133,10 +133,13 @@ PMXModel::PMXModel(PMXFile &pmxFile)
     morphWeights[item.nameLocal.c_str()] = 0.0f;
     //std::cout << "Morph name: " << item.nameLocal << std::endl;
   }
-  
+
   // Rigid Body
   rigidBodyPmx = pmxFile.rigidBodies;
-  
+
+  // Joint
+  jointsPmx = pmxFile.joints;
+
   // Physics
   for (size_t i = 0; i < bones.size(); i++)
   {
@@ -197,24 +200,37 @@ void PMXModel::InitPhysics()
   physSolver = new btSequentialImpulseConstraintSolver();
   physWorld = new btDiscreteDynamicsWorld(physDispatcher, physBroadphase, physSolver, physConfig);
 
-  physWorld->setGravity(btVector3(0, 0, 0));
+  // Disable Gravity for debug
+  //physWorld->setGravity(btVector3(0, 0, 0));
+  //physWorld->setGravity(btVector3(0, -9.8f, 0));
 
+  // Create Rigid Body
   for (auto& item : rigidBodyPmx)
   {
     if (item.nameLocal.find("耳") == std::string::npos)
     {
-      continue;
+      //continue;
       //std::cout << "Found ears" << std::endl;
-    }
-
-    std::cout << "Bone Index ears: " << item.relatedBoneIndex << std::endl;
-    if (item.operationType == PMXRigidBody::OperationType::STATIC)
-    {
-      std::cout << "Bone Operation type: " << "static" << std::endl;
     }
     else
     {
-      std::cout << "Bone Operation type: " << "dynamic" << std::endl;
+      //std::cout << "Bone Index ears: " << item.relatedBoneIndex << std::endl;
+      auto &bone = bonesPmx[item.relatedBoneIndex];
+      //std::cout << "Bone flag: " << bone.boneFlag << std::endl;
+    }
+
+
+    if (item.operationType == PMXRigidBody::OperationType::STATIC)
+    {
+      //std::cout << "Bone Operation type: " << "static" << std::endl;
+    }
+    else if (item.operationType == PMXRigidBody::OperationType::DYNAMIC)
+    {
+      //std::cout << "Bone Operation type: " << "dynamic" << std::endl;
+    }
+    else if (item.operationType == PMXRigidBody::OperationType::DYNAMIC_POSITION_ADJUST)
+    {
+      //std::cout << "Bone Operation type: " << "dynamic merge" << std::endl;
     }
 
     // Shape
@@ -253,19 +269,19 @@ void PMXModel::InitPhysics()
     btQuaternion q;
     q.setEulerZYX(
       item.colliderRotation.z,
-      item.colliderRotation.y,
+      item.colliderRotation.y, 
       item.colliderRotation.x
     );
     colliderOffset.setRotation(q);
 
-    Utils::printVector(item.colliderPosition, "Collider: ");
+    //Utils::printVector(item.colliderPosition, "Collider: ");
 
     btTransform boneGlobalTransform;
     boneGlobalTransform.setFromOpenGLMatrix(
       glm::value_ptr(globalTransform[item.relatedBoneIndex])
     );
     colliderOffset = boneGlobalTransform.inverse() * colliderOffset;
-
+    
     // Mass
     btScalar mass = 0.0f;
     btVector3 inertia(0, 0, 0);
@@ -281,7 +297,7 @@ void PMXModel::InitPhysics()
     {
       shape->calculateLocalInertia(mass, inertia);
     }
-    std::cout << "Mass: " << mass << std::endl;
+    //std::cout << "Mass: " << mass << std::endl;
 
     // Motion for interpolation
     btDefaultMotionState* motion =
@@ -310,10 +326,11 @@ void PMXModel::InitPhysics()
     // - Doesn't affected by physics.
     // - Solid obstacle to dynamic object.
     // - Moved by our script/code.
-    if (item.operationType == PMXRigidBody::OperationType::STATIC) {
+    if (item.operationType == PMXRigidBody::OperationType::STATIC) 
+    {
       body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
     }
-
+    
     int collisionGroup = 1 << item.groupIndex;
     // Tilde operator (~)
     // from: 00100010
@@ -324,19 +341,111 @@ void PMXModel::InitPhysics()
     physWorld->addRigidBody(body, collisionGroup, collisionMask);
 
     rigidBody.push_back(
-      RigidBodyModel 
-      {
-        colliderOffset,
-        shape,
-        body,
-        item.operationType,
-        item.relatedBoneIndex,
-      }
-    );
-
+      RigidBodyModel
+    {
+      colliderOffset,
+      shape,
+      body,
+      item.operationType,
+      item.relatedBoneIndex,
+    });
   }
 
-  std::cout << "Rigid body PMX: " << rigidBody.size() << std::endl;
+  // Create Joint
+  for (const auto &item : jointsPmx)
+  {
+    // 1. Create the Joint's World Transform from PMX data
+    btTransform jointWorld;
+    jointWorld.setIdentity();
+    jointWorld.setOrigin(btVector3(item.position.x, item.position.y, item.position.z));
+
+    btQuaternion q;
+    q.setEuler(item.rotation.y, item.rotation.x, item.rotation.z); // Using PMX Heading/Pitch/Bank
+    jointWorld.setRotation(q);
+
+    // 2. Get the World Transforms of the two Rigid Bodies
+    // These should be the ones you calculated during the Rigid Body init
+    btRigidBody* bodyA = rigidBody[item.rigidBodyIndex1].body;
+    btRigidBody* bodyB = rigidBody[item.rigidBodyIndex2].body;
+
+    btTransform frameInA = bodyA->getWorldTransform().inverse() * jointWorld;
+    btTransform frameInB = bodyB->getWorldTransform().inverse() * jointWorld;
+
+    btGeneric6DofSpringConstraint* joint = new btGeneric6DofSpringConstraint(
+      *bodyA, *bodyB, frameInA, frameInB, true
+    );
+
+    // Position Limits
+    joint->setLinearLowerLimit(
+      btVector3
+      (
+        item.positionConstraintLower.x, 
+        item.positionConstraintLower.y, 
+        item.positionConstraintLower.z
+      )
+    );
+    joint->setLinearUpperLimit(
+      btVector3
+      (
+        item.positionConstraintUpper.x, 
+        item.positionConstraintUpper.y, 
+        item.positionConstraintUpper.z
+      )
+    );
+
+    // Rotation Limits (Radians)
+    joint->setAngularLowerLimit(
+      btVector3
+      (
+        item.rotationConstraintLower.x, 
+        item.rotationConstraintLower.y, 
+        item.rotationConstraintLower.z
+      )
+    );
+    joint->setAngularUpperLimit(
+      btVector3
+      (
+        item.rotationConstraintUpper.x, 
+        item.rotationConstraintUpper.y, 
+        item.rotationConstraintUpper.z
+      )
+    );
+
+    // Spring
+    if (item.springPosition.x != 0)
+    {
+      joint->enableSpring(0, true);
+      joint->setStiffness(0, item.springPosition.x);
+    }
+    if (item.springPosition.y != 0)
+    {
+      joint->enableSpring(1, true);
+      joint->setStiffness(1, item.springPosition.y);
+    }
+    if (item.springPosition.z != 0)
+    {
+      joint->enableSpring(2, true);
+      joint->setStiffness(2, item.springPosition.z);
+    }
+    if (item.springRotation.x != 0)
+    {
+      joint->enableSpring(3, true);
+      joint->setStiffness(3, item.springRotation.x);
+    }
+    if (item.springRotation.y != 0)
+    {
+      joint->enableSpring(4, true);
+      joint->setStiffness(4, item.springRotation.y);
+    }
+    if (item.springRotation.z != 0)
+    {
+      joint->enableSpring(5, true);
+      joint->setStiffness(5, item.springRotation.z);
+    }
+
+    // true = bodies linked by joint won't collide with each other
+    physWorld->addConstraint(joint, true);
+  }
 }
 
 
@@ -395,19 +504,6 @@ void PMXModel::UpdatePhysics()
 
   physWorld->stepSimulation(1.0f / 60.0f);
 
-  for (const auto& item : rigidBody) 
-  {
-    if (item.operationType == PMXRigidBody::OperationType::STATIC)
-    {
-      btTransform boneWorldTrans;
-      boneWorldTrans.setFromOpenGLMatrix(
-        glm::value_ptr(globalTransform[item.relatedBoneIndex])
-      );
-      btTransform physicsWorldTrans = boneWorldTrans * item.colliderOffset;
-      item.body->getMotionState()->setWorldTransform(physicsWorldTrans);
-    }
-  }
-
   //for (const auto& item : rigidBody)
   //{
   //  // For each Dynamic rigid body:
@@ -427,8 +523,28 @@ void PMXModel::UpdatePhysics()
   //}
 
   // Global Transform after physics
+  std::vector<int32_t> included = {172, 173, 174, 175, 177, 178, 179, 180};
+  
   for (const auto& item : rigidBody)
   {
+    auto it = std::find(included.begin(), included.end(), item.relatedBoneIndex);
+    if (it == included.end())
+    {
+      //continue;
+    }
+
+    // Static
+    if (item.operationType == PMXRigidBody::OperationType::STATIC)
+    {
+      btTransform boneWorldTrans;
+      boneWorldTrans.setFromOpenGLMatrix(
+        glm::value_ptr(globalTransform[item.relatedBoneIndex])
+      );
+      btTransform physicsWorldTrans = boneWorldTrans * item.colliderOffset;
+      item.body->getMotionState()->setWorldTransform(physicsWorldTrans);
+    }
+
+    // Dynamic and DynamicMerge
     if (item.operationType != PMXRigidBody::OperationType::STATIC)
     {
       btTransform physicsWorldTrans;
@@ -440,7 +556,24 @@ void PMXModel::UpdatePhysics()
       // Update your PMX Bone with this new matrix for rendering
       btScalar matrixArray[16];
       boneWorldTrans.getOpenGLMatrix(matrixArray);
-      globalTransform[item.relatedBoneIndex] = glm::make_mat4(matrixArray);
+      glm::mat4 btGlobalTransform = glm::make_mat4(matrixArray);
+      //glm::vec3 boneWorldPos = GetBoneWorldPosition(item.relatedBoneIndex);
+      //glm::vec3 boneWorldPhysPos = glm::vec3(btGlobalTransform[3]);
+      glm::vec3 boneWorldPos = glm::vec3(globalTransform[item.relatedBoneIndex][3]);
+
+      //btGlobalTransform[3] = globalTransform[item.relatedBoneIndex][3];
+      //btGlobalTransform[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+      //btGlobalTransform[3] = btGlobalTransform[3];
+      //btGlobalTransform[3] = glm::vec4(boneWorldPos, 1.0f);
+
+      if (item.relatedBoneIndex == 243)
+      {
+        //Utils::printVector(boneWorldPhysPos, "bonePhysicsPosition");
+        //Utils::printVector(boneWorldPos, "bonePosition");
+        //std::cout << "index: " << item.relatedBoneIndex << std::endl;
+      }
+
+      globalTransform[item.relatedBoneIndex] = btGlobalTransform;
 
       UpdateChildrenGlobalTransform(item.relatedBoneIndex);
     }
@@ -461,6 +594,11 @@ void PMXModel::UpdatePhysics()
       localTransform[item.relatedBoneIndex] = globalTransform[item.relatedBoneIndex];
     }
   }
+
+  for (size_t i = 0; i < bones.size(); i++)
+  {
+    UpdateGlobalTransform(i);
+  }
 }
 
 
@@ -478,45 +616,45 @@ void PMXModel::UpdateLocalTransform(int index)
 
 
 void PMXModel::UpdateIKTransform(int index)
-  {
+{
   BoneModel bone = bones[index];
   localTransform[index] =
     glm::translate(glm::mat4(1.0f), bone.position + bone.addTranslation) *
-      glm::translate(glm::mat4(1.0f), bone.restPosition) *
+    glm::translate(glm::mat4(1.0f), bone.restPosition) *
     glm::toMat4(glm::quat(glm::vec3(3.0f, 0.0f, 3.0f))) *
-      glm::toMat4(glm::quat(bone.rotation)) *
+    glm::toMat4(glm::quat(bone.rotation)) *
     glm::toMat4(glm::quat(bone.addRotation)) *
-      glm::translate(glm::mat4(1.0f), -bone.restPosition);
-  }
+    glm::translate(glm::mat4(1.0f), -bone.restPosition);
+}
 
 
 void PMXModel::UpdateAdditionalTransform(int index)
-  {
+{
   BoneModel bone = bones[index];
-    glm::vec3 addTranslation(0.0f);
-    glm::quat addRotation(1, 0, 0, 0);
-    if (bone.hasAddTranslation)
-    {
-      addTranslation = localTransform[bone.addParentIndex][3] * bone.additionalRate;
-    }
-    if (bone.hasAddRotation)
-    {
-      glm::quat parentRotation = glm::quat_cast(glm::mat3(localTransform[bone.addParentIndex]));
-      addRotation = glm::slerp(
-        glm::quat(1, 0, 0, 0),
-        parentRotation,
-        bone.additionalRate
-      );
-    }
+  glm::vec3 addTranslation(0.0f);
+  glm::quat addRotation(1, 0, 0, 0);
+  if (bone.hasAddTranslation)
+  {
+    addTranslation = localTransform[bone.addParentIndex][3] * bone.additionalRate;
+  }
+  if (bone.hasAddRotation)
+  {
+    glm::quat parentRotation = glm::quat_cast(glm::mat3(localTransform[bone.addParentIndex]));
+    addRotation = glm::slerp(
+      glm::quat(1, 0, 0, 0),
+      parentRotation,
+      bone.additionalRate
+    );
+  }
   bones[index].addTranslation = addTranslation;
   bones[index].addRotation = addRotation;
   UpdateLocalTransform(index);
-  }
+}
 
 
 // Update the global transform of children and predecessors
 void PMXModel::UpdateChildrenGlobalTransform(int index)
-  {
+{
   std::vector<int> chainIndex;
   GetBoneSubtree(index, chainIndex);
   for (int i : chainIndex)
@@ -531,12 +669,12 @@ void PMXModel::UpdateChildrenGlobalTransform(int index)
 void PMXModel::UpdateGlobalTransform(int index)
 {
   BoneModel bone = bones[index];
-    if (bone.parentBoneIndex > 0)
-    {
+  if (bone.parentBoneIndex > 0)
+  {
     globalTransform[index] = globalTransform[bone.parentBoneIndex] * localTransform[index];
-    }
-    else
-    {
+  }
+  else
+  {
     globalTransform[index] = localTransform[index];
   }
 }
@@ -588,7 +726,7 @@ void PMXModel::Update()
     // DISCOVERY: The CCD Algorithm below is work, something might be wrong with how we update the delta rotation
     // DISCOVERY: Chat GPT said that I am using global axis to my local rotation, hence I need to make it local first
 
-
+    
     // CCD Algorithm
     for (size_t j = 0; j < pmxBone.ikIteration; j++)
     {
@@ -632,21 +770,23 @@ void PMXModel::Update()
         UpdateLocalTransform(jointIndex);
         UpdateGlobalTransform(jointIndex);
         UpdateChildrenGlobalTransform(jointIndex);
-        }
+      }
 
     }
     // End CCD Algorithm
-    }
+  }
   // End IK Transform
 
   // Test Physics
-  UpdatePhysics();
+  //UpdatePhysics();
 
   // Global Transform (for Rendering)
   for (size_t i = 0; i < bones.size(); i++)
   {
     UpdateGlobalTransform(i);
   }
+
+  UpdatePhysics();
 
   boneMatrices = globalTransform;
 }

@@ -51,6 +51,17 @@ struct BoneModel
   bool hasAddRotation;
 };
 
+struct RigidBodyModel
+{
+  btTransform colliderOffset;
+  btCollisionShape* shape;
+  btRigidBody* body;
+  PMXRigidBody::OperationType operationType;
+  
+  int32_t relatedBoneIndex;
+};
+
+
 class PMXModel
 {
   public:
@@ -66,10 +77,11 @@ class PMXModel
     std::vector<PMXMorph> morphs;
     std::vector<RigidBodyModel> rigidBody;
     std::vector<PMXRigidBody> rigidBodyPmx;
+    std::vector<PMXJoint> jointsPmx;
     
     std::unordered_map<const char*, float> morphWeights;
     std::unordered_map<int, std::vector<int>> boneChildren;
-    
+
     btBroadphaseInterface* physBroadphase = nullptr;
     btDefaultCollisionConfiguration* physConfig = nullptr;
     btCollisionDispatcher* physDispatcher = nullptr;
@@ -84,7 +96,7 @@ class PMXModel
     
     std::vector<glm::mat4> globalTransform;
     std::vector<glm::mat4> localTransform;
-    
+
     bool hasPrint = false;
     
     PMXModel(PMXFile &pmxFile);

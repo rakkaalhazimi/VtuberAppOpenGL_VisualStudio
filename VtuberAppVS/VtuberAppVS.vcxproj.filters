@@ -1701,6 +1701,7 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x64\native\onnxruntime_providers_shared.dll" />
     <None Include="assets\shaders\pose-drawer.vert" />
     <None Include="assets\shaders\pose-drawer.frag" />
+    <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
