@@ -191,20 +191,8 @@ PMXModel::PMXModel(PMXFile &pmxFile)
 }
 
 
-void PMXModel::InitPhysics()
+void PMXModel::CreateRigidBody()
 {
-  // World
-  physBroadphase = new btDbvtBroadphase();
-  physConfig = new btDefaultCollisionConfiguration();
-  physDispatcher = new btCollisionDispatcher(physConfig);
-  physSolver = new btSequentialImpulseConstraintSolver();
-  physWorld = new btDiscreteDynamicsWorld(physDispatcher, physBroadphase, physSolver, physConfig);
-
-  // Disable Gravity for debug
-  //physWorld->setGravity(btVector3(0, 0, 0));
-  //physWorld->setGravity(btVector3(0, -9.8f, 0));
-
-  // Create Rigid Body
   for (auto& item : rigidBodyPmx)
   {
     if (item.nameLocal.find("耳") == std::string::npos)
@@ -215,7 +203,7 @@ void PMXModel::InitPhysics()
     else
     {
       //std::cout << "Bone Index ears: " << item.relatedBoneIndex << std::endl;
-      auto &bone = bonesPmx[item.relatedBoneIndex];
+      auto& bone = bonesPmx[item.relatedBoneIndex];
       //std::cout << "Bone flag: " << bone.boneFlag << std::endl;
     }
 
@@ -350,9 +338,12 @@ void PMXModel::InitPhysics()
       item.relatedBoneIndex,
     });
   }
+}
 
-  // Create Joint
-  for (const auto &item : jointsPmx)
+
+void PMXModel::CreateJoints()
+{
+  for (const auto& item : jointsPmx)
   {
     // 1. Create the Joint's World Transform from PMX data
     btTransform jointWorld;
@@ -446,6 +437,30 @@ void PMXModel::InitPhysics()
     // true = bodies linked by joint won't collide with each other
     physWorld->addConstraint(joint, true);
   }
+}
+
+
+void PMXModel::InitPhysics()
+{
+  // World
+  physBroadphase = new btDbvtBroadphase();
+  physConfig = new btDefaultCollisionConfiguration();
+  physDispatcher = new btCollisionDispatcher(physConfig);
+  physSolver = new btSequentialImpulseConstraintSolver();
+  physWorld = new btDiscreteDynamicsWorld(physDispatcher, physBroadphase, physSolver, physConfig);
+
+  //physWorld->setGravity(btVector3(0, -9.8f * 10.0f, 0));
+  btStaticPlaneShape* groundShape = new btStaticPlaneShape(btVector3(0, 1, 0), 0.0f);
+
+  btTransform groundTransform;
+  groundTransform.setIdentity();
+  btDefaultMotionState* groundMS = new btDefaultMotionState(groundTransform);
+
+  btRigidBody::btRigidBodyConstructionInfo groundInfo(0, groundMS, groundShape, btVector3(0, 0, 0));
+  btRigidBody groundRB(groundInfo);
+
+  CreateRigidBody();
+  CreateJoints();
 }
 
 
@@ -558,19 +573,20 @@ void PMXModel::UpdatePhysics()
       boneWorldTrans.getOpenGLMatrix(matrixArray);
       glm::mat4 btGlobalTransform = glm::make_mat4(matrixArray);
       //glm::vec3 boneWorldPos = GetBoneWorldPosition(item.relatedBoneIndex);
-      //glm::vec3 boneWorldPhysPos = glm::vec3(btGlobalTransform[3]);
+      glm::vec3 boneWorldPhysPos = glm::vec3(btGlobalTransform[3]);
       glm::vec3 boneWorldPos = glm::vec3(globalTransform[item.relatedBoneIndex][3]);
 
       //btGlobalTransform[3] = globalTransform[item.relatedBoneIndex][3];
       //btGlobalTransform[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-      //btGlobalTransform[3] = btGlobalTransform[3];
+      //btGlobalTransform[3] = btGlobalTransform[3] + glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
       //btGlobalTransform[3] = glm::vec4(boneWorldPos, 1.0f);
 
-      if (item.relatedBoneIndex == 243)
+      if (!hasPrint)
       {
-        //Utils::printVector(boneWorldPhysPos, "bonePhysicsPosition");
-        //Utils::printVector(boneWorldPos, "bonePosition");
-        //std::cout << "index: " << item.relatedBoneIndex << std::endl;
+        Utils::printVector(boneWorldPhysPos, "bonePhysicsPosition");
+        Utils::printVector(boneWorldPos, "bonePosition");
+        std::cout << "index: " << item.relatedBoneIndex << std::endl;
+        std::cout << std::endl;
       }
 
       globalTransform[item.relatedBoneIndex] = btGlobalTransform;
@@ -578,6 +594,7 @@ void PMXModel::UpdatePhysics()
       UpdateChildrenGlobalTransform(item.relatedBoneIndex);
     }
   }
+  hasPrint = true;
 
   // Physics live in global world, change it to local world
   for (const auto& item : rigidBody)

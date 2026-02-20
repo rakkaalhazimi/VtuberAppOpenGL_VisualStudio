@@ -100,6 +100,8 @@ class PMXModel
     bool hasPrint = false;
     
     PMXModel(PMXFile &pmxFile);
+    void CreateRigidBody();
+    void CreateJoints();
     void InitPhysics();
     void GetBoneSubtree(int index, std::vector<int> &out);
     glm::vec3 GetBoneWorldPosition(int index, bool isLog = false);
