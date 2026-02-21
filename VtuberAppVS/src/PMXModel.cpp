@@ -1,6 +1,23 @@
 #include "PMXModel.h"
 
 
+void BoneModel::setRotation(glm::vec3 eulers)
+{
+  rotation = eulers;
+  quadRotation = glm::quat(eulers);
+}
+
+glm::quat BoneModel::getQuadRotation() const
+{
+  return quadRotation;
+}
+
+glm::vec3 BoneModel::getRotation() const
+{
+  return rotation;
+}
+
+
 PMXModel::PMXModel(PMXFile &pmxFile)
 {
   for (size_t i = 0; i < pmxFile.bones.size(); i++)
@@ -21,6 +38,7 @@ PMXModel::PMXModel(PMXFile &pmxFile)
         pmxFile.bones[i].position,                                  // rest position
         glm::vec3(0.0f),                                            // position
         glm::vec3(0.0f),                                            // rotation
+        glm::quat(1, 0, 0, 0),                                      // quadRotation
         glm::vec3(0.0f),                                            // addTranslation
         glm::quat(1, 0, 0, 0),                                      // addRotation
         glm::quat(1, 0, 0, 0),                                      // ikRotation
@@ -575,7 +593,7 @@ void PMXModel::UpdateLocalTransform(int index)
     glm::translate(glm::mat4(1.0f), bone.position + bone.addTranslation) *
     glm::translate(glm::mat4(1.0f), bone.restPosition) *
     glm::toMat4(glm::quat(bone.ikRotation)) *
-    glm::toMat4(glm::quat(bone.rotation)) *
+    glm::toMat4(bone.getQuadRotation()) *
     glm::toMat4(glm::quat(bone.addRotation)) *
     glm::translate(glm::mat4(1.0f), -bone.restPosition);
 }

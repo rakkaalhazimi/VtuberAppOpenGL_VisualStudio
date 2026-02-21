@@ -42,6 +42,7 @@ struct BoneModel
   glm::vec3 restPosition;
   glm::vec3 position;
   glm::vec3 rotation;
+  glm::quat quadRotation;
   glm::vec3 addTranslation;
   glm::quat addRotation;
   glm::quat ikRotation;
@@ -49,6 +50,10 @@ struct BoneModel
 
   bool hasAddTranslation;
   bool hasAddRotation;
+
+  void setRotation(glm::vec3 eulers);
+  glm::quat getQuadRotation() const;
+  glm::vec3 getRotation() const;
 };
 
 struct RigidBodyModel
