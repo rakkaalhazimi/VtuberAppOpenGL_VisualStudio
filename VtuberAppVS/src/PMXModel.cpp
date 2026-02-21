@@ -255,10 +255,10 @@ void PMXModel::CreateRigidBody()
     );
 
     btQuaternion q;
-    q.setEulerZYX(
-      item.colliderRotation.z,
+    q.setEuler(
       item.colliderRotation.y, 
-      item.colliderRotation.x
+      item.colliderRotation.x,
+      item.colliderRotation.z
     );
     colliderOffset.setRotation(q);
 
@@ -268,7 +268,7 @@ void PMXModel::CreateRigidBody()
     boneGlobalTransform.setFromOpenGLMatrix(
       glm::value_ptr(globalTransform[item.relatedBoneIndex])
     );
-    colliderOffset = boneGlobalTransform.inverse() * colliderOffset;
+    //colliderOffset = boneGlobalTransform * colliderOffset;
     
     // Mass
     btScalar mass = 0.0f;
@@ -281,7 +281,7 @@ void PMXModel::CreateRigidBody()
     {
       mass = item.weight;
     }
-    if (mass > 0.0f) 
+    if (mass != 0.0f)
     {
       shape->calculateLocalInertia(mass, inertia);
     }
@@ -320,11 +320,7 @@ void PMXModel::CreateRigidBody()
     }
     
     int collisionGroup = 1 << item.groupIndex;
-    // Tilde operator (~)
-    // from: 00100010
-    // to:   11011101
-    // Invert to define what it DOES hit
-    int collisionMask = ~item.ignoreCollisionGroup;
+    int collisionMask = item.ignoreCollisionGroup;
 
     physWorld->addRigidBody(body, collisionGroup, collisionMask);
 
@@ -577,27 +573,14 @@ void PMXModel::UpdatePhysics()
       glm::vec3 boneWorldPos = glm::vec3(globalTransform[item.relatedBoneIndex][3]);
 
       //btGlobalTransform[3] = globalTransform[item.relatedBoneIndex][3];
-      //btGlobalTransform[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-      //btGlobalTransform[3] = btGlobalTransform[3] + glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-      //btGlobalTransform[3] = glm::vec4(boneWorldPos, 1.0f);
-
-      if (!hasPrint)
-      {
-        Utils::printVector(boneWorldPhysPos, "bonePhysicsPosition");
-        Utils::printVector(boneWorldPos, "bonePosition");
-        std::cout << "index: " << item.relatedBoneIndex << std::endl;
-        std::cout << std::endl;
-      }
-
       globalTransform[item.relatedBoneIndex] = btGlobalTransform;
-
-      UpdateChildrenGlobalTransform(item.relatedBoneIndex);
+      //UpdateChildrenGlobalTransform(item.relatedBoneIndex);
     }
   }
-  hasPrint = true;
+  //hasPrint = true;
 
   // Physics live in global world, change it to local world
-  for (const auto& item : rigidBody)
+  /*for (const auto& item : rigidBody)
   {
     BoneModel bone = bones[item.relatedBoneIndex];
     if (bone.parentBoneIndex > 0)
@@ -610,11 +593,11 @@ void PMXModel::UpdatePhysics()
     {
       localTransform[item.relatedBoneIndex] = globalTransform[item.relatedBoneIndex];
     }
-  }
+  }*/
 
   for (size_t i = 0; i < bones.size(); i++)
   {
-    UpdateGlobalTransform(i);
+    //UpdateGlobalTransform(i);
   }
 }
 
