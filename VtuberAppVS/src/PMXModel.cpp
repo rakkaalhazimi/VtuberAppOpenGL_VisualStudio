@@ -30,40 +30,6 @@ PMXModel::PMXModel(PMXFile &pmxFile)
       }
     );
 
-    if (hasAddTranslation || hasAddRotation)
-    {
-      addParentIndexList.insert(pmxFile.bones[i].additionalParentIndex);
-    }
-
-    if (pmxFile.bones[i].ikBoneIndex > 0)
-    {
-      auto currentBone = pmxFile.bones[i];
-
-      if (currentBone.ikLinks.size() < 1)
-      {
-      }
-      else
-      {
-        //std::cout << "Current Bone index: " << i << std::endl;
-        ////std::cout << "Current Bone Flag: " << currentBone.boneFlag << std::endl;
-        //std::cout << "Additional Parent Index: " << currentBone.additionalParentIndex << std::endl;
-        //std::cout << "Additional Rate: " << currentBone.additionalRate << std::endl;
-        //std::cout << "Parent Index: " << currentBone.parentBoneIndex << std::endl;
-        //std::cout << "Has add rotate: " << bones[i].hasAddRotation << std::endl;
-        //std::cout << "Has add translate: " << bones[i].hasAddTranslation << std::endl;
-        //std::cout << "Bone position: " << currentBone.position.x << " " << currentBone.position.y << " " << currentBone.position.z << std::endl;
-        //std::cout << "End effector IK Bone index: " << currentBone.ikBoneIndex << std::endl;
-        //std::cout << "Link count: " << currentBone.ikLinkCount << std::endl;
-        //std::cout << "Link size: " << currentBone.ikLinks.size() << std::endl;
-        for (size_t j = 0; j < currentBone.ikLinkCount; j++)
-        {
-          auto &currentLink = currentBone.ikLinks[j];
-          //std::cout << "Bone linked index: " << currentLink.ikBoneIndex << std::endl;
-        }
-        //std::cout << std::endl;
-      }
-    }
-
     // Add pmx original bones
     bonesPmx.push_back(pmxFile.bones[i]);
   }
@@ -609,19 +575,6 @@ void PMXModel::UpdateLocalTransform(int index)
     glm::translate(glm::mat4(1.0f), bone.position + bone.addTranslation) *
     glm::translate(glm::mat4(1.0f), bone.restPosition) *
     glm::toMat4(glm::quat(bone.ikRotation)) *
-    glm::toMat4(glm::quat(bone.rotation)) *
-    glm::toMat4(glm::quat(bone.addRotation)) *
-    glm::translate(glm::mat4(1.0f), -bone.restPosition);
-}
-
-
-void PMXModel::UpdateIKTransform(int index)
-{
-  BoneModel bone = bones[index];
-  localTransform[index] =
-    glm::translate(glm::mat4(1.0f), bone.position + bone.addTranslation) *
-    glm::translate(glm::mat4(1.0f), bone.restPosition) *
-    glm::toMat4(glm::quat(glm::vec3(3.0f, 0.0f, 3.0f))) *
     glm::toMat4(glm::quat(bone.rotation)) *
     glm::toMat4(glm::quat(bone.addRotation)) *
     glm::translate(glm::mat4(1.0f), -bone.restPosition);

@@ -90,7 +90,6 @@ class PMXModel
 
     std::vector<glm::mat4> boneMatrices;
 
-    std::set<int32_t> addParentIndexList;
     std::vector<glm::vec3> addTranslation;
     std::vector<glm::quat> addRotation;
     
@@ -111,7 +110,6 @@ class PMXModel
     float GetIKRelativeChainLength(int targetIndex);
     void UpdateMorph(const char* name, float &weight);
     void UpdatePhysics();
-    void UpdateIKTransform(int index);
     void UpdateLocalTransform(int index);
     void UpdateAdditionalTransform(int index);
     void UpdateChildrenGlobalTransform(int index);
