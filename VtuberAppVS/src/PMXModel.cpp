@@ -1,13 +1,13 @@
 #include "PMXModel.h"
 
 
-void BoneModel::setRotation(glm::vec3 eulers)
+void BoneModel::setRotation(glm::vec3 &eulers)
 {
   rotation = eulers;
   quadRotation = glm::quat(eulers);
 }
 
-void BoneModel::setQuadRotation(glm::quat& q)
+void BoneModel::setQuadRotation(glm::quat &q)
 {
   rotation = glm::eulerAngles(q);
   quadRotation = q;
