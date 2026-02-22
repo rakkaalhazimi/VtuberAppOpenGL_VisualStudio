@@ -51,7 +51,8 @@ struct BoneModel
   bool hasAddTranslation;
   bool hasAddRotation;
 
-  void setRotation(glm::vec3 eulers);
+  void setRotation(glm::vec3 &eulers);
+  void setQuadRotation(glm::quat &q);
   glm::quat getQuadRotation() const;
   glm::vec3 getRotation() const;
 };
