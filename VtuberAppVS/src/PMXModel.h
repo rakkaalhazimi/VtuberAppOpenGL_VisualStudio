@@ -87,6 +87,7 @@ class PMXModel
     
     std::unordered_map<const char*, float> morphWeights;
     std::unordered_map<int, std::vector<int>> boneChildren;
+    std::unordered_map<std::string, uint32_t> boneNameToIndex;
 
     btBroadphaseInterface* physBroadphase = nullptr;
     btDefaultCollisionConfiguration* physConfig = nullptr;

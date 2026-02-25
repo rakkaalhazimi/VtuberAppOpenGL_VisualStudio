@@ -41,6 +41,7 @@
 #include "TextRenderer.h"
 #include "Utils.h"
 #include "VMDFile.h"
+#include "VMDPlayer.h"
 
 
 
@@ -199,18 +200,6 @@ int main(int argc, char* argv[]) {
 	// Selector
 	Selector selector;
 
-
-	// VMDFile
-	VMDFile vmdFile("assets/vmd/walk.vmd");
-	for (auto& item : vmdFile.m_motions)
-	{
-		std::cout << Utils::sjis_to_utf8(item.m_boneName) << std::endl;
-		std::cout << item.m_frame << std::endl;
-		//std::cout << item.m_interpolation << std::endl;
-		//std::cout << item.m_quaternion << std::endl;
-	}
-
-
 	// PMXFile
 	PMXFile pmxFile(modelFilepath.c_str());
 
@@ -298,9 +287,9 @@ int main(int argc, char* argv[]) {
 	glm::vec3 eulerAngles = glm::eulerAngles(rotation);  // or extract manually
 
 	// Apply Euler angles to bone
-	feixiaoModel.bones[target].rotation.x = eulerAngles.x;  // depends on your rotation order
-	feixiaoModel.bones[target].rotation.y = eulerAngles.y;
-	feixiaoModel.bones[target].rotation.z = eulerAngles.z;
+	//feixiaoModel.bones[target].rotation.x = eulerAngles.x;  // depends on your rotation order
+	//feixiaoModel.bones[target].rotation.y = eulerAngles.y;
+	//feixiaoModel.bones[target].rotation.z = eulerAngles.z;
 
 	// Move whole model
 	// (don't move the index 3 since it is the same depth for IK)
@@ -318,6 +307,38 @@ int main(int argc, char* argv[]) {
 	feixiaoModel.UpdatePhysics();
 
 
+	// VMDFile
+	VMDFile vmdFile("assets/vmd/walk.vmd");
+	std::map<std::string, std::vector<uint32_t>> vBoneMap;
+	for (auto& item : vmdFile.m_motions)
+	{
+
+		//vBoneMap[Utils::sjis_to_utf8(item.m_boneName)].push_back(item.m_frame);
+
+		/*std::cout
+			<< Utils::sjis_to_utf8(item.m_boneName)
+			<< " "
+			<< item.m_frame
+			<< std::endl;*/
+			//std::cout << std::endl;
+			//std::cout << item.m_quaternion.w << std::endl;
+	}
+
+	/*std::ofstream vBoneFile("assets/text/vBoneFrame.txt");
+	for (const auto& pair : vBoneMap)
+	{
+		vBoneFile << pair.first << ": ";
+		for (const auto& item : pair.second)
+		{
+			vBoneFile << item << " ";
+		}
+		vBoneFile << std::endl;
+	}*/
+
+	// VMDPlayer
+	VMDPlayer vmdPlayer(feixiaoModel, vmdFile);
+
+	// Command Manager
 	CommandManager commandManager;
 
 	// GUI test
@@ -467,6 +488,42 @@ int main(int argc, char* argv[]) {
 		const bool hit = rayCaster.Intersect(shader, mesh);
 		const bool pressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 		const bool unlocked = glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS;
+
+		// Move Model
+		/*if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		{
+			feixiaoModel.bones[3].position += camera.Orientation * 0.1f;
+			feixiaoModel.bones[3].rotation.y += (glm::pi<float>() - feixiaoModel.bones[3].rotation.y) * 0.2f;
+		}
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		{
+			feixiaoModel.bones[3].position += camera.Orientation * -0.1f;
+			feixiaoModel.bones[3].rotation.y += (0.0f - feixiaoModel.bones[3].rotation.y) * 0.2f;
+		}
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		{
+			feixiaoModel.bones[3].position += glm::cross(camera.Orientation, camera.Up) * 0.1f;
+			feixiaoModel.bones[3].rotation.y += (glm::half_pi<float>() - feixiaoModel.bones[3].rotation.y) * 0.2f;
+		}
+		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		{
+			feixiaoModel.bones[3].position += glm::cross(camera.Orientation, camera.Up) * -0.1f;
+			feixiaoModel.bones[3].rotation.y += (-glm::half_pi<float>() - feixiaoModel.bones[3].rotation.y) * 0.2f;
+		}*/
+
+		//feixiaoModel.bones[86].rotation.y = modelYRotation;
+		//feixiaoModel.bones[86].ikRotation *= glm::angleAxis(0.1f, glm::vec3(0, 1, 0));
+
+		// Bone Position
+		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
+		{
+			vmdPlayer.Play();
+			//feixiaoModel.GetBoneWorldPosition(7, true);
+			//feixiaoModel.GetBoneWorldPosition(87, true);
+			//feixiaoModel.GetBoneWorldDist(7, 87, true);
+			//feixiaoModel.GetParentBoneWorldRot(87, true);
+		}
+
 
 		// Pose Drawer
 		/*for (size_t i = 0; i < 10; i++)

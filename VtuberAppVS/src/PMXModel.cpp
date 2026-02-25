@@ -30,6 +30,7 @@ PMXModel::PMXModel(PMXFile &pmxFile)
   {
     int parent = pmxFile.bones[i].parentBoneIndex;
     boneChildren[parent].push_back(i);
+    boneNameToIndex[pmxFile.bones[i].nameLocal] = i;
     
     bool hasAddTranslation = (bool)(pmxFile.bones[i].boneFlag & BoneFlag::ADD_MOVEMENT);
     bool hasAddRotation = (bool)(pmxFile.bones[i].boneFlag & BoneFlag::ADD_ROTATION);
