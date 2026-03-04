@@ -21,6 +21,33 @@ glm::vec3 IK::rotatePointAround3D(
 	return pivot + rotate3DVector(diff, axis, angle);
 }
 
+// Solve the angle with single axis
+IK::axisAngle3D IK::solveSingleAxisAngle2D(
+	glm::vec3& axis, glm::vec3& joint, glm::vec3& effector, glm::vec3& target
+)
+{
+	glm::vec3 v1 = glm::normalize(effector - joint);
+	glm::vec3 v2 = glm::normalize(target - joint);
+
+	// Remove X component (project onto plane perpendicular to axis)
+	v1 -= axis * glm::dot(v1, axis);
+	v2 -= axis * glm::dot(v2, axis);
+
+	v1 = glm::normalize(v1);
+	v2 = glm::normalize(v2);
+
+	float dot = glm::clamp(glm::dot(v1, v2), -1.0f, 1.0f);
+	float angle = glm::acos(dot);
+	float direction = glm::dot(glm::cross(v1, v2), axis);
+	// Negative dot product means
+	// The rotation is around the NEGATIVE X-axis
+	if (direction < 0)
+	{
+		axis *= -1;
+	}
+
+	return { axis, angle };
+}
 
 IK::axisAngle3D IK::solveAxisAngle3D(
 	glm::vec3& joint, glm::vec3& effector, glm::vec3& target

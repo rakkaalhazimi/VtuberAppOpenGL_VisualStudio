@@ -722,7 +722,60 @@ void PMXModel::Update()
         //target = GetBoneWorldPosition(targetIndex);
         int jointIndex = pmxBone.ikLinks[k].ikBoneIndex;
         glm::vec3 joint = GetBoneWorldPosition(jointIndex);
-        IK::axisAngle3D result = IK::solveAxisAngle3D(joint, effector, target);
+
+        // Axis limit is how far the bone can rotate.
+        // Angle limit is step size of rotation.
+        // 
+        // Rotate Right Knee Manually
+        // Rotate x-positive knee bend forward
+        // Rotate x-negative knee bend backward
+        //
+        // IK with x-axis
+        // Position-y negative or positive => negative angle and axis (1 0 0) didn't move
+        // 
+        // IK normal
+        // Position-y positive => positive angle and negative axis, move leg up
+        // Position-y negative => positive angle and positive axis, move leg down
+        IK::axisAngle3D result;
+        if (pmxBone.ikLinks[k].enableAngleLimit)
+        {
+          if ((pmxBone.ikLinks[k].lowerLimit.x != 0 || pmxBone.ikLinks[k].upperLimit.x != 0) &&
+            (pmxBone.ikLinks[k].lowerLimit.y == 0 || pmxBone.ikLinks[k].upperLimit.y == 0) &&
+            (pmxBone.ikLinks[k].lowerLimit.z == 0 || pmxBone.ikLinks[k].upperLimit.z == 0)
+            )
+          {
+            glm::vec3 axis(1, 0, 0);
+            result = IK::solveSingleAxisAngle2D(axis, joint, effector, target);
+            //std::cout << "Angle X-Axis: " << result.angle << std::endl;
+            //Utils::printVector(result.axis, "Axis");
+          }
+          else if ((pmxBone.ikLinks[k].lowerLimit.x == 0 || pmxBone.ikLinks[k].upperLimit.x == 0) &&
+            (pmxBone.ikLinks[k].lowerLimit.y != 0 || pmxBone.ikLinks[k].upperLimit.y != 0) &&
+            (pmxBone.ikLinks[k].lowerLimit.z == 0 || pmxBone.ikLinks[k].upperLimit.z == 0)
+            )
+          {
+            glm::vec3 axis(0, 1, 0);
+            result = IK::solveSingleAxisAngle2D(axis, joint, effector, target);
+          }
+          else if ((pmxBone.ikLinks[k].lowerLimit.x == 0 || pmxBone.ikLinks[k].upperLimit.x == 0) &&
+            (pmxBone.ikLinks[k].lowerLimit.y == 0 || pmxBone.ikLinks[k].upperLimit.y == 0) &&
+            (pmxBone.ikLinks[k].lowerLimit.z != 0 || pmxBone.ikLinks[k].upperLimit.z != 0)
+            )
+          {
+            glm::vec3 axis(0, 0, 1);
+            result = IK::solveSingleAxisAngle2D(axis, joint, effector, target);
+          }
+          else
+          {
+            result = IK::solveAxisAngle3D(joint, effector, target);
+          }
+        }
+        else
+        {
+          result = IK::solveAxisAngle3D(joint, effector, target);
+        }
+
+        //result = IK::solveAxisAngle3D(joint, effector, target);
 
         if (result.angle <= 1e-6 || glm::length(result.axis) <= 1e-6)
         {
@@ -734,6 +787,27 @@ void PMXModel::Update()
         glm::quat globalRotation = glm::quat_cast(globalTransform[jointIndex]);
         glm::quat deltaRotation = glm::angleAxis(result.angle, result.axis);
         glm::quat chainRotation = glm::inverse(globalRotation) * deltaRotation * globalRotation;
+        //glm::quat chainRotation = glm::quat(1, 0, 0, 0);
+
+        if (pmxBone.ikLinks[k].enableAngleLimit && (jointIndex == 85))
+        {
+          // Apply axis limit by converting the quaternion to euler.
+          // However we need to make sure that the euler is continuous.
+          //glm::vec3 eulerRadians = glm::eulerAngles(chainRotation);
+
+          //glm::vec3 clampedEuler;
+          //clampedEuler.x = glm::clamp(eulerRadians.x, pmxBone.ikLinks[k].lowerLimit.x, pmxBone.ikLinks[k].upperLimit.x);
+          //clampedEuler.y = glm::clamp(eulerRadians.y, pmxBone.ikLinks[k].lowerLimit.y, pmxBone.ikLinks[k].upperLimit.y);
+          //clampedEuler.z = glm::clamp(eulerRadians.z, pmxBone.ikLinks[k].lowerLimit.z, pmxBone.ikLinks[k].upperLimit.z);
+
+          //chainRotation = glm::quat(clampedEuler);
+
+          //std::cout << "Angle Full: " << result.angle << std::endl;
+          //std::cout << "Angle Limit: " << pmxBone.ikLimitAngle << std::endl;
+          //Utils::printVector(result.axis, "Axis");
+        }
+
+
         bones[jointIndex].ikRotation *= chainRotation;
 
         // Rotate all children of Joint
