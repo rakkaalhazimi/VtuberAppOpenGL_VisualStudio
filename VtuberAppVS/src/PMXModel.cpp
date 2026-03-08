@@ -240,14 +240,14 @@ void PMXModel::CreateRigidBody()
     colliderOffset.setIdentity();
     colliderOffset.setOrigin(
       btVector3(
-        item.colliderPosition.x, 
-        item.colliderPosition.y, 
+        item.colliderPosition.x,
+        item.colliderPosition.y,
         item.colliderPosition.z)
     );
 
     btQuaternion q;
     q.setEuler(
-      item.colliderRotation.y, 
+      item.colliderRotation.y,
       item.colliderRotation.x,
       item.colliderRotation.z
     );
@@ -260,7 +260,7 @@ void PMXModel::CreateRigidBody()
       glm::value_ptr(globalTransform[item.relatedBoneIndex])
     );
     //colliderOffset = boneGlobalTransform * colliderOffset;
-    
+
     // Mass
     btScalar mass = 0.0f;
     btVector3 inertia(0, 0, 0);
@@ -305,11 +305,11 @@ void PMXModel::CreateRigidBody()
     // - Doesn't affected by physics.
     // - Solid obstacle to dynamic object.
     // - Moved by our script/code.
-    if (item.operationType == PMXRigidBody::OperationType::STATIC) 
+    if (item.operationType == PMXRigidBody::OperationType::STATIC)
     {
       body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
     }
-    
+
     int collisionGroup = 1 << item.groupIndex;
     int collisionMask = item.ignoreCollisionGroup;
 
@@ -317,13 +317,13 @@ void PMXModel::CreateRigidBody()
 
     rigidBody.push_back(
       RigidBodyModel
-    {
-      colliderOffset,
-      shape,
-      body,
-      item.operationType,
-      item.relatedBoneIndex,
-    });
+      {
+        colliderOffset,
+        shape,
+        body,
+        item.operationType,
+        item.relatedBoneIndex,
+      });
   }
 }
 
@@ -357,16 +357,16 @@ void PMXModel::CreateJoints()
     joint->setLinearLowerLimit(
       btVector3
       (
-        item.positionConstraintLower.x, 
-        item.positionConstraintLower.y, 
+        item.positionConstraintLower.x,
+        item.positionConstraintLower.y,
         item.positionConstraintLower.z
       )
     );
     joint->setLinearUpperLimit(
       btVector3
       (
-        item.positionConstraintUpper.x, 
-        item.positionConstraintUpper.y, 
+        item.positionConstraintUpper.x,
+        item.positionConstraintUpper.y,
         item.positionConstraintUpper.z
       )
     );
@@ -375,16 +375,16 @@ void PMXModel::CreateJoints()
     joint->setAngularLowerLimit(
       btVector3
       (
-        item.rotationConstraintLower.x, 
-        item.rotationConstraintLower.y, 
+        item.rotationConstraintLower.x,
+        item.rotationConstraintLower.y,
         item.rotationConstraintLower.z
       )
     );
     joint->setAngularUpperLimit(
       btVector3
       (
-        item.rotationConstraintUpper.x, 
-        item.rotationConstraintUpper.y, 
+        item.rotationConstraintUpper.x,
+        item.rotationConstraintUpper.y,
         item.rotationConstraintUpper.z
       )
     );
@@ -786,38 +786,43 @@ void PMXModel::Update()
 
         glm::quat globalRotation = glm::quat_cast(globalTransform[jointIndex]);
         glm::quat deltaRotation = glm::angleAxis(result.angle, result.axis);
-        glm::quat chainRotation = glm::inverse(globalRotation) * deltaRotation * globalRotation;
-        //glm::quat chainRotation = glm::quat(1, 0, 0, 0);
 
         if (pmxBone.ikLinks[k].enableAngleLimit && (jointIndex == 85))
         {
-          // Apply axis limit by converting the quaternion to euler.
-          // However we need to make sure that the euler is continuous.
-          //glm::vec3 eulerRadians = glm::eulerAngles(chainRotation);
+          glm::vec3 currentEuler = bones[jointIndex].ikPrevAngle;
+          glm::vec3 originalEuler = glm::eulerAngles(bones[jointIndex].ikRotation);
+          glm::vec3 deltaEuler = glm::eulerAngles(deltaRotation);
+          glm::vec3 predictedEuler = currentEuler + deltaEuler;
+          glm::vec3 limitedEuler = 
+            glm::clamp(
+              predictedEuler, 
+              pmxBone.ikLinks[k].lowerLimit, 
+              pmxBone.ikLinks[k].upperLimit
+          );
+          glm::vec3 allowedEuler = 
+            glm::clamp(
+              limitedEuler - currentEuler, 
+              -pmxBone.ikLimitAngle, 
+              pmxBone.ikLimitAngle
+           );
 
-          //glm::vec3 clampedEuler;
-          //clampedEuler.x = glm::clamp(eulerRadians.x, pmxBone.ikLinks[k].lowerLimit.x, pmxBone.ikLinks[k].upperLimit.x);
-          //clampedEuler.y = glm::clamp(eulerRadians.y, pmxBone.ikLinks[k].lowerLimit.y, pmxBone.ikLinks[k].upperLimit.y);
-          //clampedEuler.z = glm::clamp(eulerRadians.z, pmxBone.ikLinks[k].lowerLimit.z, pmxBone.ikLinks[k].upperLimit.z);
-
-          //chainRotation = glm::quat(clampedEuler);
-
-          //std::cout << "Angle Full: " << result.angle << std::endl;
-          //std::cout << "Angle Limit: " << pmxBone.ikLimitAngle << std::endl;
-          //Utils::printVector(result.axis, "Axis");
+          deltaRotation = glm::quat(allowedEuler);
+          bones[jointIndex].ikPrevAngle += allowedEuler;
         }
 
-
+        glm::quat chainRotation = glm::inverse(globalRotation) * deltaRotation * globalRotation;
         bones[jointIndex].ikRotation *= chainRotation;
 
         // Rotate all children of Joint
         for (int l = k - 1; l >= 0; --l)
         {
-          int jointChildIndex = pmxBone.ikLinks[l].ikBoneIndex;
-          bones[jointChildIndex].ikRotation *= chainRotation;
-          UpdateLocalTransform(jointChildIndex);
-          UpdateGlobalTransform(jointChildIndex);
-          UpdateChildrenGlobalTransform(jointChildIndex);
+          // Disable child rotation so the child doesn't have
+          // euler starting point.
+          //int jointChildIndex = pmxBone.ikLinks[l].ikBoneIndex;
+          //bones[jointChildIndex].ikRotation *= chainRotation;
+          //UpdateLocalTransform(jointChildIndex);
+          //UpdateGlobalTransform(jointChildIndex);
+          //UpdateChildrenGlobalTransform(jointChildIndex);
         }
         UpdateLocalTransform(jointIndex);
         UpdateGlobalTransform(jointIndex);

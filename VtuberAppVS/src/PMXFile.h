@@ -8,7 +8,6 @@
 #include <iostream>
 #include <locale>
 #include <fstream>
-#include <set>
 #include <string>
 #include <vector>
 #include <windows.h>
