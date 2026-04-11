@@ -881,6 +881,54 @@ void PMXModel::Draw(Shader &shader)
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(GLuint)));
     
     indexOffset += indexCount;
+  }*/
+
+  //for (int i = 0; i < materials.size(); i++)
+  for (PMXMaterial &material : materials)
+  {
+    int indexCount = material.faceCount;
+    int textureIndex = material.textureIndex;
+    int environmentIndex = material.environmentIndex;
+
+    textures[textureIndex].texUnit(shader, "myTexture", material.textureIndex);
+    textures[textureIndex].Bind();
+
+    if (material.environmentMode > 0)
+    {
+      textures[environmentIndex].texUnit(shader, "envTexture", environmentIndex);
+      textures[environmentIndex].Bind();
+    }
+
+    glUniform1i(
+      glGetUniformLocation(shader.ID, "envMode"),
+      material.environmentMode
+    );
+
+    glUniform4f(
+      glGetUniformLocation(shader.ID, "diffuseColor"), 
+      material.diffuseColor.x, material.diffuseColor.y, material.diffuseColor.z, material.diffuseColor.w
+    );
+
+    glUniform3f(
+      glGetUniformLocation(shader.ID, "ambientColor"),
+      material.ambientColor.x, material.ambientColor.y, material.ambientColor.z
+    );
+
+    glUniform3f(
+      glGetUniformLocation(shader.ID, "specularColor"),
+      material.specularColor.x, material.specularColor.y, material.specularColor.z
+    );
+
+    glUniform1f(
+      glGetUniformLocation(shader.ID, "shininess"),
+      material.specularity
+    );
+
+
+
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(GLuint)));
+
+    indexOffset += indexCount;
   }
 }
 

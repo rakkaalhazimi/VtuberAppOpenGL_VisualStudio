@@ -9,6 +9,8 @@ layout (location = 4) in vec4 boneWeights;
 
 
 out vec2 texCoord;
+out vec3 Normal;
+out vec3 crntPos;
 
 uniform mat4 camMatrix;
 
@@ -16,5 +18,7 @@ uniform mat4 camMatrix;
 void main()
 {
   texCoord = aTex;
+  Normal = aNormal;
+  crntPos = aPos;
   gl_Position = camMatrix * vec4(aPos, 1.0);
 }

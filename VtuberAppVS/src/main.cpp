@@ -67,6 +67,34 @@ GLuint indices[] = {
 	1, 2, 3,
 };
 
+Vertex lightVertices[] =
+{ //     COORDINATES     //
+	Vertex{glm::vec3(-0.1f, -0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f, -0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f, -0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f, -0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f,  0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f,  0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f,  0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f,  0.1f,  0.1f)}
+};
+
+GLuint lightIndices[] =
+{
+	0, 1, 2,
+	0, 2, 3,
+	0, 4, 7,
+	0, 7, 3,
+	3, 7, 6,
+	3, 6, 2,
+	2, 6, 5,
+	2, 5, 1,
+	1, 5, 4,
+	1, 4, 0,
+	4, 5, 6,
+	4, 6, 7
+};
+
 
 
 int main(int argc, char* argv[]) {
@@ -80,7 +108,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	std::string modelFilepath = argv[1];
-	std::string vmdFilepath = argv[2];
+	//std::string vmdFilepath = argv[2];
 	std::cout << "Model filepath: " << modelFilepath << std::endl;
 
 	// Enable windows to print kanji
@@ -139,9 +167,10 @@ int main(int argc, char* argv[]) {
 	Shader shader("assets/shaders/default.vert", "assets/shaders/default.frag");
 	Shader textShader("assets/shaders/text.vert", "assets/shaders/text.frag");
 	Shader rayShader("assets/shaders/default.vert", "assets/shaders/ray.frag");
-	Shader pmxShader("assets/shaders/pmx.vert", "assets/shaders/default.frag");
+	Shader pmxShader("assets/shaders/pmx.vert", "assets/shaders/pmx.frag");
 	Shader camDeviceShader("assets/shaders/camera-device.vert", "assets/shaders/camera-device.frag");
 	Shader poseDrawerShader("assets/shaders/pose-drawer.vert", "assets/shaders/pose-drawer.frag");
+	Shader lightShader("assets/shaders/light.vert", "assets/shaders/light.frag");
 
 
 	// Texture
@@ -157,6 +186,30 @@ int main(int argc, char* argv[]) {
 	Mesh mesh2(vert, ind, tex);
 	mesh2.translation.x = 1.5f;
 	std::vector<Mesh*> meshes = { &mesh, &mesh2 };
+
+
+	// Lightning
+	std::vector <Vertex> lightVerts(lightVertices, lightVertices + sizeof(lightVertices) / sizeof(Vertex));
+	std::vector <GLuint> lightInd(lightIndices, lightIndices + sizeof(lightIndices) / sizeof(GLuint));
+
+	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	glm::vec3 lightPos = glm::vec3(0.5f, 30.0f, -20.0f);
+	glm::vec3 lightSize = glm::vec3(100.0f);
+	glm::mat4 lightModel = glm::mat4(2.0f);
+	lightModel = glm::translate(lightModel, lightPos);
+	//lightModel = glm::scale(lightModel, lightSize);
+
+	Mesh light(lightVerts, lightInd, tex);
+
+	lightShader.Activate();
+	light.translation = lightPos;
+	light.scale = 10.0f;
+	glUniform4f(glGetUniformLocation(lightShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+
+	pmxShader.Activate();
+	glUniform3f(glGetUniformLocation(pmxShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+	glUniform4f(glGetUniformLocation(pmxShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+
 
 
 	// Raycaster
@@ -203,40 +256,40 @@ int main(int argc, char* argv[]) {
 	// PMXFile
 	PMXFile pmxFile(modelFilepath.c_str());
 
-	std::vector<Texture> pmxTextures = {};
-	for (int i = 0; i < pmxFile.textures.size(); i++)
-	{
-		pmxTextures.push_back(
-			Texture{ pmxFile.textures[i].c_str(), "myTexture", (GLuint)i }
-		);
-	}
+	//std::vector<Texture> pmxTextures = {};
+	//for (int i = 0; i < pmxFile.textures.size(); i++)
+	//{
+	//	pmxTextures.push_back(
+	//		Texture{ pmxFile.textures[i].c_str(), "myTexture", (GLuint)i }
+	//	);
+	//}
 
-	std::vector<Vertex> pmxVertices;
-	for (PMXVertex item : pmxFile.vertices)
-	{
-		pmxVertices.push_back(
-			Vertex
-			{
-				item.position,
-				item.normal,
-				glm::vec3(0.0f, 0.0f, 0.0f),
-				glm::vec2(item.uv.x, 1.0f - item.uv.y), // Flips vertical for PMX File
-			}
-			);
-	}
+	//std::vector<Vertex> pmxVertices;
+	//for (PMXVertex item : pmxFile.vertices)
+	//{
+	//	pmxVertices.push_back(
+	//		Vertex
+	//		{
+	//			item.position,
+	//			item.normal,
+	//			glm::vec3(0.0f, 0.0f, 0.0f),
+	//			glm::vec2(item.uv.x, 1.0f - item.uv.y), // Flips vertical for PMX File
+	//		}
+	//		);
+	//}
 
-	std::vector<GLuint> pmxIndices;
-	for (uint16_t item : pmxFile.indices)
-	{
-		pmxIndices.push_back(item);
-	}
-	Mesh feixiaoMesh(pmxVertices, pmxIndices, pmxTextures);
+	//std::vector<GLuint> pmxIndices;
+	//for (uint16_t item : pmxFile.indices)
+	//{
+	//	pmxIndices.push_back(item);
+	//}
+	//Mesh feixiaoMesh(pmxVertices, pmxIndices, pmxTextures);
 
-	int faceAllCount = 0;
-	for (PMXMaterial item : pmxFile.materials)
-	{
-		faceAllCount += item.faceCount;
-	}
+	//int faceAllCount = 0;
+	//for (PMXMaterial item : pmxFile.materials)
+	//{
+	//	faceAllCount += item.faceCount;
+	//}
 
 	// PMX Model
 	PMXModel feixiaoModel(pmxFile);
@@ -441,7 +494,7 @@ int main(int argc, char* argv[]) {
 			shader.Activate();
 			// uOffset += 0.01f; // temporarily disable uvOffset for pmx mesh
 			modelXRotation += 1.0f;
-			modelYRotation += 0.01f;
+			modelYRotation += 0.1f;
 			GLuint uOffsetLoc = glGetUniformLocation(shader.ID, "uOffset");
 			glUniform1f(uOffsetLoc, uOffset);
 
@@ -469,10 +522,18 @@ int main(int argc, char* argv[]) {
 		camera.Inputs(window);
 		camera.updateShaderMatrix(shader, "camMatrix");
 
+		// Lightning
+		lightShader.Activate();
+		light.Draw(lightShader);
+		glUniform3f(glGetUniformLocation(pmxShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		camera.updateShaderMatrix(lightShader, "camMatrix");
+
+
+		// Mesh
 		shader.Activate();
 		selector.Watch(window, rayCaster, meshes);
-		mesh.Draw(shader);
-		mesh2.Draw(shader);
+		//mesh.Draw(shader);
+		//mesh2.Draw(shader);
 
 		pmxShader.Activate();
 
@@ -535,7 +596,7 @@ int main(int argc, char* argv[]) {
 		//poseDrawer.Draw(poseDrawerShader, landmarks[(int)BlazePoseKeypoint::RightEyeInner], width, height);
 
 		// Device Camera
-		cameraDevice.start(camDeviceShader, width, height, 0.0f, 0.0f);
+		//cameraDevice.start(camDeviceShader, width, height, 0.0f, 0.0f);
 
 		// Get mouse coordinate
 		double xpos, ypos;

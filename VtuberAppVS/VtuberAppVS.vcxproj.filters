@@ -1705,6 +1705,8 @@
     <None Include="assets\shaders\pose-drawer.vert" />
     <None Include="assets\shaders\pose-drawer.frag" />
     <None Include=".editorconfig" />
+    <None Include="assets\shaders\light.vert" />
+    <None Include="assets\shaders\light.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1813,5 +1815,6 @@
   <ItemGroup>
     <Text Include="assets\text\bones-common-rotate.txt" />
     <Text Include="assets\text\bones.txt" />
+    <Text Include="assets\shaders\pmx.frag" />
   </ItemGroup>
 </Project>

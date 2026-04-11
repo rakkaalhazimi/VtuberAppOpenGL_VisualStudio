@@ -108,6 +108,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include/imgui;$(ProjectDir)include/onnxruntime;$(ProjectDir)src;$(SolutionDir)vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,6 +127,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include/imgui;$(ProjectDir)include/onnxruntime;$(ProjectDir)src;$(SolutionDir)vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -564,6 +566,8 @@
     <None Include=".editorconfig" />
     <None Include="assets\shaders\camera-device.frag" />
     <None Include="assets\shaders\camera-device.vert" />
+    <None Include="assets\shaders\light.frag" />
+    <None Include="assets\shaders\light.vert" />
     <None Include="assets\shaders\pose-drawer.frag" />
     <None Include="assets\shaders\pose-drawer.vert" />
     <None Include="include\glm\detail\func_common.inl" />
@@ -741,6 +745,7 @@
     <ClCompile Include="src\VMDPlayer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="assets\shaders\pmx.frag" />
     <Text Include="assets\text\bones-common-rotate.txt" />
     <Text Include="assets\text\bones.txt" />
   </ItemGroup>
