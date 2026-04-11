@@ -21,6 +21,7 @@ class Texture
     GLuint ID;
     const char* type;
     GLuint unit;
+    bool isDummy = false;
     
     Texture(std::string image, const char* texType, GLuint slot);
     void texUnit(Shader& shader, const char* uniform, GLuint unit);

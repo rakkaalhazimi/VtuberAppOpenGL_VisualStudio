@@ -26,36 +26,58 @@ Texture::Texture(std::string image, const char* texType, GLuint slot)
   std::wstring imageWidePath = utf8_to_wstring(image);
   std::filesystem::path imagePath = imageWidePath;
   std::ifstream imageFile {imagePath, std::ios::binary};
-  unsigned char* bytes;
-  
-  
-  if (!imageFile.is_open())
+  unsigned char* bytes = nullptr;
+
+  if (!std::filesystem::exists(imagePath) || std::filesystem::is_directory(imagePath))
   {
-    std::cerr << "Error opening file: " << imagePath << std::endl;
-    std::cerr << "Failed to load image: " << stbi_failure_reason() << std::endl;
-    exit(1);
+    std::cerr 
+      << "Warning: Path is directory or missing: " 
+      << image 
+      << ". Creating dummy texture." 
+      << std::endl;
+    isDummy = true;
   }
-  
-  // Temporary solution to open bmp file
-  if (endsWith(image, ".bmp"))
+
+  // Use Dummy Image
+  if (isDummy)
   {
-    // const char *imageCStr = image.c_str();
-    bytes = stbi_load(image.c_str(), &widthImg, &heightImg, &numColCh, 0);
+    widthImg = 1;
+    heightImg = 1;
+    numColCh = 4;
+    //bytes = new unsigned char[4] { 0, 0, 0, 0 }; // Fully transparent black
+    bytes = new unsigned char[4] { 255, 0, 255, 255 }; // RGBA Pink for debug
   }
+  // Open Image File Normally
   else
   {
-    uint32_t size = std::filesystem::file_size(imagePath);
-    // std::cout << "File size: " << size << " bytes" << std::endl;
-    std::vector<unsigned char> buffer(size);
-    imageFile.read(reinterpret_cast<char*>(buffer.data()), size);
-    bytes = stbi_load_from_memory(buffer.data(), size, &widthImg, &heightImg, &numColCh, 0);
-    
-  }
+    if (!imageFile.is_open())
+    {
+      std::cerr << "Error opening file: " << imagePath << std::endl;
+      std::cerr << "Failed to load image: " << stbi_failure_reason() << std::endl;
+      exit(1);
+    }
   
-  if (bytes == nullptr)
-  {
-    std::cerr << "Failed to open image: " << stbi_failure_reason() << std::endl;
-    exit(1);
+    // Temporary solution to open bmp file
+    if (endsWith(image, ".bmp"))
+    {
+      // const char *imageCStr = image.c_str();
+      bytes = stbi_load(image.c_str(), &widthImg, &heightImg, &numColCh, 0);
+    }
+    else
+    {
+      uint32_t size = std::filesystem::file_size(imagePath);
+      // std::cout << "File size: " << size << " bytes" << std::endl;
+      std::vector<unsigned char> buffer(size);
+      imageFile.read(reinterpret_cast<char*>(buffer.data()), size);
+      bytes = stbi_load_from_memory(buffer.data(), size, &widthImg, &heightImg, &numColCh, 0);
+    
+    }
+  
+    if (bytes == nullptr)
+    {
+      std::cerr << "Failed to open image: " << stbi_failure_reason() << std::endl;
+      exit(1);
+    }
   }
   
   glGenTextures(1, &ID);
@@ -68,6 +90,13 @@ Texture::Texture(std::string image, const char* texType, GLuint slot)
   
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  /*std::cout 
+    << "Created texture from: " 
+    << image
+    << " with index: " 
+    << slot 
+    << std::endl;*/
   
   // std::cout << "Image: " << image << std::endl;
   // std::cout << "width: " << widthImg << std::endl;
@@ -98,8 +127,17 @@ Texture::Texture(std::string image, const char* texType, GLuint slot)
   
   glGenerateMipmap(GL_TEXTURE_2D);
   
-  stbi_image_free(bytes);
-  imageFile.close();
+  // Cleanup
+  if (isDummy)
+  {
+    delete[] bytes;
+  }
+  else
+  {
+    stbi_image_free(bytes);
+    imageFile.close();
+  }
+
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
