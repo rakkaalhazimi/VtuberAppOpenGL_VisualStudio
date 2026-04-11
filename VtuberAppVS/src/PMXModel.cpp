@@ -893,7 +893,7 @@ void PMXModel::Draw(Shader &shader)
     textures[textureIndex].texUnit(shader, "myTexture", material.textureIndex);
     textures[textureIndex].Bind();
 
-    if (material.environmentMode > 0)
+    if (material.environmentMode > 0 && material.environmentIndex != -1)
     {
       textures[environmentIndex].texUnit(shader, "envTexture", environmentIndex);
       textures[environmentIndex].Bind();
