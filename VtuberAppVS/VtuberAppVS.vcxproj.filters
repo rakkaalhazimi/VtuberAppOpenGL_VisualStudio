@@ -1287,6 +1287,9 @@
     <ClInclude Include="src\VMDPlayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\PMXDrawer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1809,6 +1812,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\VMDPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PMXDrawer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

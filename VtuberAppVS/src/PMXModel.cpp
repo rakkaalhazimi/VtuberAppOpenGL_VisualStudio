@@ -846,6 +846,19 @@ void PMXModel::Update()
   UpdatePhysics();
 
   boneMatrices = globalTransform;
+
+  // Update skinnedVertices
+  for (size_t i = 0; i < skinnedVertices.size(); i++)
+  {
+    glm::vec4 skinnedPos = glm::vec4(0.0f);
+    for (size_t j = 0; j < 4; j++)
+    {
+      int boneIndex = skinnedVertices[i].boneIndices[j];
+      float weight = skinnedVertices[i].boneWeights[j];
+      skinnedPos += weight * (boneMatrices[boneIndex] * glm::vec4(vertices[i].position, 1.0f));
+    }
+    skinnedVertices[i].position = skinnedPos;
+  }
 }
 
 

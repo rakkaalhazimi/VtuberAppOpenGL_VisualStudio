@@ -33,6 +33,7 @@
 //#include "PoseEstimation.h"
 //#include "pose/BlazePose.h"
 //#include "pose/PoseDrawer.h"
+#include "PMXDrawer.h"
 #include "PMXFile.h"
 #include "PMXModel.h"
 #include "RayCaster.h"
@@ -359,6 +360,9 @@ int main(int argc, char* argv[]) {
 	// Physics test
 	feixiaoModel.UpdatePhysics();
 
+	// PMX Drawer
+	PMXDrawer feixiaoDrawer(feixiaoModel.vertices, feixiaoModel.indices);
+
 
 	// VMDFile
 	VMDFile vmdFile("assets/vmd/walk.vmd");
@@ -539,7 +543,14 @@ int main(int argc, char* argv[]) {
 
 		camera.updateShaderMatrix(pmxShader, "camMatrix");
 		feixiaoModel.Update();
-		feixiaoModel.Draw(pmxShader);
+		//feixiaoModel.Draw(pmxShader);
+		feixiaoDrawer.Draw(
+			pmxShader, 
+			feixiaoModel.skinnedVertices, 
+			feixiaoModel.boneMatrices, 
+			feixiaoModel.materials, 
+			feixiaoModel.textures
+		);
 
 		// Ray Casting
 		rayShader.Activate();

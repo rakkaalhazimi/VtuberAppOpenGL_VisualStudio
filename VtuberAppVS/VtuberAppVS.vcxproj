@@ -546,6 +546,7 @@
     <ClInclude Include="src\gui\PMXEditorGUI.h" />
     <ClInclude Include="src\InverseKinematics.h" />
     <ClInclude Include="src\Mesh.h" />
+    <ClInclude Include="src\PMXDrawer.h" />
     <ClInclude Include="src\PMXFile.h" />
     <ClInclude Include="src\PMXModel.h" />
     <ClInclude Include="src\PoseEstimation.h" />
@@ -728,6 +729,7 @@
     <ClCompile Include="src\leftover.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\PMXDrawer.cpp" />
     <ClCompile Include="src\PMXFile.cpp" />
     <ClCompile Include="src\PMXModel.cpp" />
     <ClCompile Include="src\PoseEstimation.cpp" />
